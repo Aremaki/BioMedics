@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=eds-medic-train
+#SBATCH --job-name=ner
 #SBATCH -t 48:00:00
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=2
@@ -8,10 +8,59 @@
 #SBATCH --output=logs/slurm-%j-stdout.log
 #SBATCH --error=logs/slurm-%j-stderr.log
 #SBATCH --container-image /scratch/images/sparkhadoop.sqsh  --container-mounts=/export/home/$USER:/export/home/$USER,/data/scratch/$USER:/data/scratch/$USER --container-mount-home --container-writable
-nvidia-smi
 source $HOME/.user_conda/miniconda/etc/profile.d/conda.sh # appel de ce script
-
-export PATH=/usr/hdp/current/accumulo-client/bin:/usr/hdp/current/atlas-server/bin:/usr/hdp/current/beacon-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/falcon-client/bin:/usr/hdp/current/flume-server/bin:/usr/hdp/current/hadoop-client/bin:/usr/hdp/current/hbase-client/bin:/usr/hdp/current/hadoop-hdfs-client/bin:/usr/hdp/current/hadoop-mapreduce-client/bin:/usr/hdp/current/hadoop-yarn-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/hive-hcatalog/bin:/usr/hdp/current/hive-server2/bin:/usr/hdp/current/kafka-broker/bin:/usr/hdp/current/mahout-client/bin:/usr/hdp/current/oozie-client/bin:/usr/hdp/current/oozie-server/bin:/usr/hdp/current/phoenix-client/bin:/usr/hdp/current/pig-client/bin:/usr/hdp/share/hst/hst-agent/python-wrap:/usr/hdp/current/slider-client/bin:/usr/hdp/current/sqoop-client/bin:/usr/hdp/current/sqoop-server/bin:/usr/hdp/current/storm-slider-client/bin:/usr/hdp/current/zookeeper-client/bin:/usr/hdp/current/zookeeper-server/bin:/export/home/opt/jupyterhub/conda/bin:/export/home/opt/jupyterhub/node/bin:/export/home/opt/bin:/export/home/cse200093/.user_conda/miniconda/bin:/export/home/cse200093/.user_conda/miniconda/condabin:/usr/hdp/current/accumulo-client/bin:/usr/hdp/current/atlas-server/bin:/usr/hdp/current/beacon-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/falcon-client/bin:/usr/hdp/current/flume-server/bin:/usr/hdp/current/hadoop-client/bin:/usr/hdp/current/hbase-client/bin:/usr/hdp/current/hadoop-hdfs-client/bin:/usr/hdp/current/hadoop-mapreduce-client/bin:/usr/hdp/current/hadoop-yarn-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/hive-hcatalog/bin:/usr/hdp/current/hive-server2/bin:/usr/hdp/current/kafka-broker/bin:/usr/hdp/current/mahout-client/bin:/usr/hdp/current/oozie-client/bin:/usr/hdp/current/oozie-server/bin:/usr/hdp/current/phoenix-client/bin:/usr/hdp/current/pig-client/bin:/usr/hdp/share/hst/hst-agent/python-wrap:/usr/hdp/current/slider-client/bin:/usr/hdp/current/sqoop-client/bin:/usr/hdp/current/sqoop-server/bin:/usr/hdp/current/storm-slider-client/bin:/usr/hdp/current/zookeeper-client/bin:/usr/hdp/current/zookeeper-server/bin:/export/home/opt/jupyterhub/conda/bin:/export/home/opt/jupyterhub/node/bin:/export/home/opt/bin:/usr/hdp/current/accumulo-client/bin:/usr/hdp/current/atlas-server/bin:/usr/hdp/current/beacon-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/falcon-client/bin:/usr/hdp/current/flume-server/bin:/usr/hdp/current/hadoop-client/bin:/usr/hdp/current/hbase-client/bin:/usr/hdp/current/hadoop-hdfs-client/bin:/usr/hdp/current/hadoop-mapreduce-client/bin:/usr/hdp/current/hadoop-yarn-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/hive-hcatalog/bin:/usr/hdp/current/hive-server2/bin:/usr/hdp/current/kafka-broker/bin:/usr/hdp/current/mahout-client/bin:/usr/hdp/current/oozie-client/bin:/usr/hdp/current/oozie-server/bin:/usr/hdp/current/phoenix-client/bin:/usr/hdp/current/pig-client/bin:/usr/hdp/share/hst/hst-agent/python-wrap:/usr/hdp/current/slider-client/bin:/usr/hdp/current/sqoop-client/bin:/usr/hdp/current/sqoop-server/bin:/usr/hdp/current/storm-slider-client/bin:/usr/hdp/current/zookeeper-client/bin:/usr/hdp/current/zookeeper-server/bin:/export/home/opt/jupyterhub/conda/bin:/export/home/opt/jupyterhub/node/bin:/export/home/opt/bin:/usr/hdp/current/accumulo-client/bin:/usr/hdp/current/atlas-server/bin:/usr/hdp/current/beacon-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/falcon-client/bin:/usr/hdp/current/flume-server/bin:/usr/hdp/current/hadoop-client/bin:/usr/hdp/current/hbase-client/bin:/usr/hdp/current/hadoop-hdfs-client/bin:/usr/hdp/current/hadoop-mapreduce-client/bin:/usr/hdp/current/hadoop-yarn-client/bin:/usr/hdp/current/hive-client/bin:/usr/hdp/current/hive-hcatalog/bin:/usr/hdp/current/hive-server2/bin:/usr/hdp/current/kafka-broker/bin:/usr/hdp/current/mahout-client/bin:/usr/hdp/current/oozie-client/bin:/usr/hdp/current/oozie-server/bin:/usr/hdp/current/phoenix-client/bin:/usr/hdp/current/pig-client/bin:/usr/hdp/share/hst/hst-agent/python-wrap:/usr/hdp/current/slider-client/bin:/usr/hdp/current/sqoop-client/bin:/usr/hdp/current/sqoop-server/bin:/usr/hdp/current/storm-slider-client/bin:/usr/hdp/current/zookeeper-client/bin:/usr/hdp/current/zookeeper-server/bin:/export/home/opt/jupyterhub/conda/bin:/export/home/opt/jupyterhub/node/bin:/export/home/opt/bin:/usr/hdp/current/spark-2.4.3-client/bin:/usr/hdp/current/spark-2.4.3-client/bin:/usr/local/hadoop/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/export/home/opt/apps/texlive-20190227/2018/bin/x86_64-linux:/export/home/opt/apps/texlive-20190227/2018/bin/x86_64-linux:/export/home/opt/apps/texlive-20190227/2018/bin/x86_64-linux:/export/home/opt/apps/texlive-20190227/2018/bin/x86_64-linux:/export/home/cse200093/.local/bin:/export/home/cse200093/bin:$PATH
+cd "/export/home/cse200093/Adam/biomedics/scripts/normalization"
 source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
-cd "/export/home/cse200093/Adam/biomedics/scripts/ner/"
-dvc repro -f
+conda deactivate
+
+for config_name in "medline" "emea" "measurement" "complete_pipe" "ner_final"
+do
+
+    echo -----------------
+    echo $config_name TRAINING
+    echo -----------------
+    start_time="$(date -u +%s)"
+
+    python train.py --config ../../configs/ner/config_$config_name.cfg
+    
+    end_time="$(date -u +%s)"
+    elapsed="$(($end_time-$start_time))"
+    echo -----------------
+    echo "Total of $elapsed seconds elapsed for $config_name TRAINING"
+    echo -----------------
+    
+    echo -----------------
+    echo $config_name EVALUATION
+    echo -----------------
+    start_time="$(date -u +%s)"
+
+    python evaluate.py --config ../../configs/ner/config_$config_name.cfg
+    
+    end_time="$(date -u +%s)"
+    elapsed="$(($end_time-$start_time))"
+    echo -----------------
+    echo "Total of $elapsed seconds elapsed for $config_name EVALUATION"
+    echo -----------------
+done
+
+for config_name in "complete_pipe" "ner_final"
+do
+
+    echo -----------------
+    echo $config_name INFERENCE
+    echo -----------------
+    start_time="$(date -u +%s)"
+
+    python infer.py --config ../../configs/ner/config_$config_name.cfg
+    
+    end_time="$(date -u +%s)"
+    elapsed="$(($end_time-$start_time))"
+    echo -----------------
+    echo "Total of $elapsed seconds elapsed for $config_name INFERENCE"
+    echo -----------------
+done
+
+
+echo --NER_FINISHED---
+
+echo ---------------
