@@ -41,6 +41,7 @@ ruff = "^0.6.7"
 black = "22.6.0"
 pre-commit = "^2.18.1"
 mypy = "^0.950"
+jupyter-black = "^0.4.0"
 
 [tool.edsnlp]
 # Suggestion: choose a name that mixes both the architecture (eds-medic) and the
