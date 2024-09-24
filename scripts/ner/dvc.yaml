@@ -1,0 +1,50 @@
+stages:
+  train:
+    deps:
+      - ../../data
+      - ../../biomedics
+      - train.py
+      - evaluate.py
+      - infer.py
+      - ../../configs/ner/config_ner_final.cfg
+      - ../../configs/ner/config_measurement.cfg
+      - ../../configs/ner/config_complete_pipe.cfg
+      - ../../configs/ner/config_medline.cfg
+      - ../../configs/ner/config_emea.cfg
+    cmd:
+      - python train.py --config ../../configs/ner/config_medline.cfg
+      - python evaluate.py --config ../../configs/ner/config_medline.cfg
+      - python train.py --config ../../configs/ner/config_emea.cfg
+      - python evaluate.py --config ../../configs/ner/config_emea.cfg
+      - python train.py --config ../../configs/ner/config_measurement.cfg
+      - python evaluate.py --config ../../configs/ner/config_measurement.cfg
+      - python train.py --config ../../configs/ner/config_complete_pipe.cfg
+      - python evaluate.py --config ../../configs/ner/config_complete_pipe.cfg
+      - python infer.py --config ../../configs/ner/config_complete_pipe.cfg
+      - python train.py --config ../../configs/ner/config_ner_final.cfg
+      - python evaluate.py --config ../../configs/ner/config_ner_final.cfg
+      - python infer.py --config ../../configs/ner/config_ner_final.cfg
+      - python package.py --config ../../configs/ner/config_ner_final.cfg
+    metrics:
+      - ../../models/ner/MEDLINE/test_metrics.json:
+          cache: false
+      - ../../models/ner/EMEA/test_metrics.json:
+          cache: false
+      - ../../models/ner/expe_complete_pipe/test_metrics.json:
+          cache: false
+      - ../../models/ner/expe_measurement/test_metrics.json:
+          cache: false
+      - ../../models/ner/expe_ner_final/test_metrics.json:
+          cache: false
+          
+    outs:
+      - ../../models/ner/MEDLINE/test_metrics_per_doc.jsonl:
+          cache: false
+      - ../../models/ner/EMEA/test_metrics_per_doc.jsonl:
+          cache: false
+      - ../../models/ner/expe_complete_pipe/test_metrics_per_doc.jsonl:
+          cache: false
+      - ../../models/ner/expe_measurement/test_metrics_per_doc.jsonl:
+          cache: false
+      - ../../models/ner/expe_ner_final/test_metrics_per_doc.jsonl:
+          cache: false
