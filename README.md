@@ -1,7 +1,7 @@
 # BioMedics
 
 <div align="center">
-    <img src="graphical_abstract.svg" alt="BioMedics">
+    <img src="figures/logo.svg" alt="BioMedics">
 <p align="center">
 <a href="https://zenodo.org/badge/latestdoi/679397420"><img src="https://zenodo.org/badge/679397420.svg" alt="DOI"></a>
 <a href="https://python-poetry.org/" target="_blank">
@@ -14,11 +14,9 @@
 <a href="https://spark.apache.org/docs/2.4.8/" target="_blank">
     <img src="https://img.shields.io/badge/spark-2.4-brightgreen" alt="Supported Java version">
 </a>
-<a href="https://github.com/psf/black" target="_blank">
-    <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Black">
-</a>
-    <a href="https://dvc.org" target="_blank">
-    <img src="https://img.shields.io/badge/reproducibility-dvc-blue" alt="DVC">
+<a href="https://github.com/astral-sh/ruff" target="_blank">
+    <img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json"
+    alt="Ruff">
 </a>
 </p>
 </div>
@@ -91,7 +89,9 @@ bash run.sh
 
 ### 2. NER + Qualification
 
-<img src="figures/ner_qualif_model.svg" alt="ner_qualif">
+The model used for NER and qualification comes from [EDS-Medic](https://gitlab.eds.aphp.fr/entrep-t-de-donn-es-de-sant/eds-tools/datasciencetools/eds-medic) which have been developed by the data science team of AP-HP (Assistance Publique – Hôpitaux de Paris).
+
+<img src="figures/ner_qualif_model.svg" alt="ner_qualif_model">
 
 Training, evaluation and inference are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
@@ -100,42 +100,43 @@ cd scripts/ner
 sbtach run.sh
 ```
 
-### 3. Extract measruement
+Note: data and trained models used for the study are not available as they are sensitive data (patient data). You can use your own data in BRAT format.
 
-<img src="figures/extract_measurment.svg" alt="extract_measurement">
+### 3. Extract measurement
+
+It aims at extracting values and units from complete laboratory test in the text. It is based on regular expression processed at very high speed with spark engine.
+
+<img src="figures/extract_measurement.svg" alt="extract_measurement">
 
 ```shell
-cd scripts/ner
+cd scripts/extract_measurement
 sbtach run.sh
 ```
 
-### 4. Normalization of laboratory test
+### 4. Normalization
 
-The normalization for laboartory test is based on CODER a BERT-based model finetuned on the UMLS:
-<img src="figures/extract_measurment.svg" alt="extract_measurement">
+The normalization for laboratory test is based on CODER a BERT-based model finetuned on the UMLS:
 
-```shell
-cd scripts/ner
-sbtach run.sh
-```
-### 5. Normalization of drugs
+<img src="figures/normalization_lab.svg" alt="normalization_lab">
 
 The normalization for drug names is a fuzzy matching on a knowledge dictionnary. This dictionary is an aggregation of two open source dictionaries of drug names with their corresponding ATC codes: the UMLS restricted to the ATC vocabulary and the Unique Drug Interoperability Repository (RUIM) created by the French National Agency for Medicines and Health Products Safety (ANSM):
-<img src="figures/extract_measurment.svg" alt="extract_measurement">
+
+<img src="figures/normalization_drug.svg" alt="normalization_drug">
+
+Both normalizations are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
 ```shell
-cd scripts/ner
+cd scripts/normalization/
+sbtach run.sh
+```
+### 5. Post processed results for clinical application
+
+```shell
+cd scripts/clinical_application
 sbtach run.sh
 ```
 
-### 6. Post processed results for clinical application
-
-```shell
-cd scripts/ner
-sbtach run.sh
-```
-
-### 7. Generate figures
+### 6. Generate figures
 
 Generate figure one at a time from notebooks:
 
@@ -149,11 +150,11 @@ Generate figure one at a time from notebooks:
 
       ```shell
       cd notebooks
-      jupytext --set-formats md,ipynb 'generate_figures.md'
+      jupytext --set-formats md,ipynb 'clinical_results.md'
       ```
 
    - Open *.ipynb* and start the kernel you've just created.
-     - Run the cells to obtain every figure.
+     - Run the cells to obtain the table results.
 
 #### Note
 If you would like to run the scripts on a different database from the AP-HP database, you will have to adapt the python scripts with the configuration of the desired database.
@@ -184,4 +185,4 @@ The code has been executed on the OMOP database of the clinical data warehouse o
 
 ## Acknowledgement
 
-We would like to thank [AI4IDF](https://ai4idf.fr/) for funding this project.
+We would like to thank [AI4IDF](https://ai4idf.fr/) for funding this project, the data science teams of [Assistance Publique – Hôpitaux de Paris](https://www.aphp.fr/) for contributing to the project.
