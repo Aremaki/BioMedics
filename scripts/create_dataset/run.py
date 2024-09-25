@@ -1,6 +1,8 @@
-from loguru import logger
-from edstoolbox import SparkApp
 import sys
+
+from edstoolbox import SparkApp
+from loguru import logger
+
 from biomedics.create_dataset.main import create_dataset
 
 # Initialize app

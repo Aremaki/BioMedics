@@ -1,13 +1,23 @@
 import pandas as pd
+
 from biomedics import BASE_DIR
 
-regex_pos = r"([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+|presente?s?|presences?)"
-regex_neg = r"([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e']|absente?s?|absences?|indetectables?)"
+regex_pos = (
+    r"([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|"
+    r"[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+|presente?s?|presences?)"
+)
+
+regex_neg = (
+    r"([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|"
+    r"[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e']|absente?s?|absences?|indetectables?)"
+)
 
 
 def prepare_structured_bio_df(disease, config, complete_case_only=False):
     RES_DIR = BASE_DIR / "data" / "final_results"
-    summary_filtered_res = pd.read_pickle(RES_DIR / disease / "filtered_bio_from_structured_data.pkl")
+    summary_filtered_res = pd.read_pickle(
+        RES_DIR / disease / "filtered_bio_from_structured_data.pkl"
+    )
     summary_df_docs = pd.read_pickle(BASE_DIR / "data" / "CRH" / "summary_df_docs.pkl")
     summary_df_docs = summary_df_docs[summary_df_docs.disease == disease]
     summary_filtered_res = summary_filtered_res.merge(
@@ -46,10 +56,7 @@ def prepare_structured_bio_df(disease, config, complete_case_only=False):
             "patient_num", as_index=False
         ).agg(
             {
-                **{
-                    bio: "sum"
-                    for bio in config["CUI_codes"][disease].keys()
-                },
+                **{bio: "sum" for bio in config["CUI_codes"][disease].keys()},
                 **{
                     f"{bio} positive": "sum"
                     for bio in config["CUI_codes"][disease].keys()
@@ -64,9 +71,12 @@ def prepare_structured_bio_df(disease, config, complete_case_only=False):
 
     return summary_filtered_res, summary_patient_group
 
+
 def prepare_structured_med_df(disease, config, complete_case_only=False):
     RES_DIR = BASE_DIR / "data" / "final_results"
-    summary_filtered_res = pd.read_pickle(RES_DIR / disease / "filtered_med_from_structured_data.pkl")
+    summary_filtered_res = pd.read_pickle(
+        RES_DIR / disease / "filtered_med_from_structured_data.pkl"
+    )
     summary_df_docs = pd.read_pickle(BASE_DIR / "data" / "CRH" / "summary_df_docs.pkl")
     summary_df_docs = summary_df_docs[summary_df_docs.disease == disease]
     summary_filtered_res = summary_filtered_res.merge(
@@ -102,8 +112,14 @@ def prepare_structured_med_df(disease, config, complete_case_only=False):
 
     return summary_filtered_res, summary_patient_group
 
+
 def prepare_nlp_med_df(
-    disease, config, threshold=0.9, complete_case_only=False, filter_certainty=True, filter_negation=True
+    disease,
+    config,
+    threshold=0.9,
+    complete_case_only=False,
+    filter_certainty=True,
+    filter_negation=True,
 ):
     RES_DIR = BASE_DIR / "data" / "final_results"
     res_filtered_df = pd.read_pickle(RES_DIR / disease / "filtered_med_from_nlp.pkl")
@@ -151,6 +167,7 @@ def prepare_nlp_med_df(
 
     return res_filtered_df, patient_group
 
+
 def prepare_nlp_bio_df(disease, config, threshold=0, complete_case_only=False):
     global regex_pos
     global regex_neg
@@ -184,39 +201,39 @@ def prepare_nlp_bio_df(disease, config, threshold=0, complete_case_only=False):
             how="inner",
         )
     res_filtered_df["lower_bound"] = (
-        res_filtered_df["range_value"].str.split("[\-–]").str.get(0)
+        res_filtered_df["range_value"].str.split(r"[\-–]").str.get(0)
     )
     res_filtered_df["lower_bound"] = res_filtered_df["lower_bound"].where(
-        res_filtered_df["range_value"].str.split("[\-–]").str.len() == 2,
+        res_filtered_df["range_value"].str.split(r"[\-–]").str.len() == 2,
         None,
     )
     res_filtered_df["lower_bound"] = (
         res_filtered_df["lower_bound"]
         .mask(
-            res_filtered_df["range_value"].str.contains(">") == True,
-            res_filtered_df.range_value.str.extract("(\d+[,\.]?\d*)")[0],
+            res_filtered_df["range_value"].str.contains(">") is True,
+            res_filtered_df.range_value.str.extract(r"(\d+[,\.]?\d*)")[0],
         )
         .str.replace(",", ".")
         .astype(float)
     )
     res_filtered_df["upper_bound"] = (
-        res_filtered_df["range_value"].str.split("[\-–<>]").str.get(-1)
+        res_filtered_df["range_value"].str.split(r"[\-–<>]").str.get(-1)
     )
     res_filtered_df["upper_bound"] = res_filtered_df["upper_bound"].where(
-        res_filtered_df["range_value"].str.split("[\-–]").str.len() == 2,
+        res_filtered_df["range_value"].str.split(r"[\-–]").str.len() == 2,
         None,
     )
     res_filtered_df["upper_bound"] = (
         res_filtered_df["upper_bound"]
         .mask(
-            res_filtered_df["range_value"].str.contains("<") == True,
-            res_filtered_df.range_value.str.extract("(\d+[,\.]?\d*)")[0],
+            res_filtered_df["range_value"].str.contains("<") is True,
+            res_filtered_df.range_value.str.extract(r"(\d+[,\.]?\d*)")[0],
         )
         .str.replace(",", ".")
         .astype(float)
     )
     res_filtered_df["value_as_number"] = (
-        res_filtered_df.value_cleaned.str.extract("(\d+[,\.]?\d*)")[0]
+        res_filtered_df.value_cleaned.str.extract(r"(\d+[,\.]?\d*)")[0]
         .str.replace(",", ".")
         .astype(float)
     )
@@ -255,10 +272,7 @@ def prepare_nlp_bio_df(disease, config, threshold=0, complete_case_only=False):
             )
         patient_group = res_filtered_df.groupby("patient_num", as_index=False).agg(
             {
-                **{
-                    bio: "sum"
-                    for bio in config["CUI_codes"][disease].keys()
-                },
+                **{bio: "sum" for bio in config["CUI_codes"][disease].keys()},
                 **{
                     f"{bio} positive": "sum"
                     for bio in config["CUI_codes"][disease].keys()

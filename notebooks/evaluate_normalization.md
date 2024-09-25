@@ -736,7 +736,7 @@ display(
 
 - Revoir Précision F1 Recall vs Accuracy ?
 - Revoir par rapport à NER + Norm pour comparaison !
-- Lancer la pipe sur tous les CR Lupus 
+- Lancer la pipe sur tous les CR Lupus
 - Reprendre les erreures vues avec KriKri !
 
 ```python
@@ -1533,7 +1533,7 @@ res_accuracy = (
             (res_accuracy.Model == "CODER ALL")
             # & (res_accuracy.Label == "Biological test name")
         )
-        | ((res_accuracy.Model == "FUZZY JW") 
+        | ((res_accuracy.Model == "FUZZY JW")
            # & (res_accuracy.Label == "Drug name")
           )
     ]

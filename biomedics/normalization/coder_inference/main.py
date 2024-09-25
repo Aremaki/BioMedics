@@ -1,17 +1,24 @@
 import os
+
 os.environ["OMP_NUM_THREADS"] = "16"
 import pickle
-from pathlib import Path
+
 import pandas as pd
-from biomedics.normalization.coder_inference.get_normalization_with_coder import CoderNormalizer
-from biomedics.normalization.coder_inference.text_preprocessor import TextPreprocessor
+
 from biomedics import BASE_DIR
+from biomedics.normalization.coder_inference.get_normalization_with_coder import (
+    CoderNormalizer,
+)
+from biomedics.normalization.coder_inference.text_preprocessor import TextPreprocessor
+
 
 def coder_wrapper(df, config, model_path):
     # This wrapper is needed to preprocess terms
     # and in case the cells contains list of terms instead of one unique term
     df = df.reset_index(drop=True)
-    text_preprocessor = TextPreprocessor(cased=config.coder_cased, stopwords=config.coder_stopwords)
+    text_preprocessor = TextPreprocessor(
+        cased=config.coder_cased, stopwords=config.coder_stopwords
+    )
     coder_normalizer = CoderNormalizer(
         model_name_or_path=model_path,
         tokenizer_name_or_path=model_path,
@@ -48,7 +55,7 @@ def coder_wrapper(df, config, model_path):
 
     # Preprocessing and inference on terms
     print("--- Preprocessing terms ---")
-    if type(df[config.column_name_to_normalize].iloc[0]) == str:
+    if isinstance(df[config.column_name_to_normalize].iloc[0], str):
         coder_data_list = (
             df[config.column_name_to_normalize]
             .apply(
@@ -76,7 +83,12 @@ def coder_wrapper(df, config, model_path):
     else:
         exploded_term_df = (
             pd.DataFrame(
-                {"id": df.index, config.column_name_to_normalize: df[config.column_name_to_normalize]}
+                {
+                    "id": df.index,
+                    config.column_name_to_normalize: df[
+                        config.column_name_to_normalize
+                    ],
+                }
             )
             .explode(config.column_name_to_normalize)
             .reset_index(drop=True)
@@ -104,7 +116,9 @@ def coder_wrapper(df, config, model_path):
             tqdm_bar=config.coder_tqdm_bar,
             coder_batch_size=config.coder_batch_size,
         )
-        exploded_term_df[["label", "norm_term", "score"]] = pd.DataFrame(zip(*coder_res))
+        exploded_term_df[["label", "norm_term", "score"]] = pd.DataFrame(
+            zip(*coder_res)
+        )
         df = (
             pd.merge(
                 df.drop(columns=[config.column_name_to_normalize]),

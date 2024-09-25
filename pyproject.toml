@@ -37,7 +37,6 @@ scipy = "^1.7.3"
 [tool.poetry.group.dev.dependencies]
 interrogate = "1.5.0"
 ruff = "^0.6.7"
-black = "22.6.0"
 pre-commit = "^2.18.1"
 mypy = "^0.950"
 jupyter-black = "^0.4.0"
@@ -87,21 +86,21 @@ extend-exclude = [
     "build",
 ]
 line-length = 88
-select = [
+lint.select = [
     "E",
     "F",
     "W",
     "I001"
 ]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
 
-[tool.ruff.extend-per-file-ignores]
+[tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]
 
-[tool.ruff.isort]
-known-first-party = ["eds_medic"]
+[tool.ruff.lint.isort]
+known-first-party = ["biomedics"]
 order-by-type = true
 
 

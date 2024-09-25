@@ -239,7 +239,10 @@ def export_to_brat(doc, txt_filename, overwrite_txt=False, overwrite_ann=False):
                         ),
                         file=f,
                     )
-                    if "attributes" in entity and entity["label"] == "Chemical_and_drugs":
+                    if (
+                        "attributes" in entity
+                        and entity["label"] == "Chemical_and_drugs"
+                    ):
                         for i, attribute in enumerate(entity["attributes"]):
                             print(
                                 "A{}\t{} {} {}".format(
@@ -251,16 +254,6 @@ def export_to_brat(doc, txt_filename, overwrite_txt=False, overwrite_ann=False):
                                 file=f,
                             )
                             attribute_idx += 1
-            # if "relations" in doc:
-            #     for i, relation in enumerate(doc["relations"]):
-            #         entity_from = entities_ids[relation["from_entity_id"]]
-            #         entity_to = entities_ids[relation["to_entity_id"]]
-            #         print(
-            #             "R{}\t{} Arg1:{} Arg2:{}\t".format(
-            #                 i + 1, str(relation["label"]), entity_from, entity_to
-            #             ),
-            #             file=f,
-            #         )
 
 
 class BratConnector(object):
@@ -381,7 +374,6 @@ class BratConnector(object):
             desc="spaCy conversion",
             total=len(texts),
         ):
-
             doc._.note_id = doc_annotations["note_id"]
             spans = []
             span_groups = defaultdict(lambda: [])

@@ -1,5 +1,5 @@
 import random
-from typing import Any, Iterable, List, Optional
+from typing import Any, Generator, Iterable, List, Optional
 
 import edsnlp
 import spacy
@@ -96,7 +96,7 @@ class EdsMedicReader:
         self.multi_sentence = multi_sentence
         self.filter_expr = filter_expr
 
-    def __call__(self, nlp) -> List[Doc]:
+    def __call__(self, nlp) -> Generator[Doc, None, None]:
         filter_fn = eval(f"lambda doc:{self.filter_expr}") if self.filter_expr else None
 
         blank_nlp = edsnlp.Pipeline(nlp.lang, vocab=nlp.vocab, vocab_config=None)

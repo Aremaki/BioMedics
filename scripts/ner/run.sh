@@ -22,20 +22,20 @@ do
     start_time="$(date -u +%s)"
 
     python train.py --config ../../configs/ner/config_$config_name.cfg
-    
+
     end_time="$(date -u +%s)"
     elapsed="$(($end_time-$start_time))"
     echo -----------------
     echo "Total of $elapsed seconds elapsed for $config_name TRAINING"
     echo -----------------
-    
+
     echo -----------------
     echo $config_name EVALUATION
     echo -----------------
     start_time="$(date -u +%s)"
 
     python evaluate.py --config ../../configs/ner/config_$config_name.cfg
-    
+
     end_time="$(date -u +%s)"
     elapsed="$(($end_time-$start_time))"
     echo -----------------
@@ -52,7 +52,7 @@ do
     start_time="$(date -u +%s)"
 
     python infer.py --config ../../configs/ner/config_$config_name.cfg
-    
+
     end_time="$(date -u +%s)"
     elapsed="$(($end_time-$start_time))"
     echo -----------------

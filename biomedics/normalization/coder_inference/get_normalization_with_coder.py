@@ -1,21 +1,10 @@
-import argparse
-import os
-import pathlib
 import sys
-import time
 
-import numpy as np
 import torch
-from torch import nn
-from tqdm import tqdm, trange
+from tqdm import tqdm
 from transformers import (
-    AdamW,
-    AutoConfig,
     AutoModel,
     AutoTokenizer,
-    get_constant_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
-    get_linear_schedule_with_warmup,
 )
 
 sys.path.append("/export/home/cse200093/scratch/BioMedics/normalisation/training")
@@ -33,7 +22,8 @@ class CoderNormalizer:
             self.model = AutoModel.from_pretrained(model_name_or_path).to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
             self.model_from_transformers = True
-        except:
+        except Exception as e:
+            print(f"Error loading model: {e}")
             self.model = torch.load(model_name_or_path).to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
             self.model_from_transformers = False

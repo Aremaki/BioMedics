@@ -1,15 +1,18 @@
+import os
+import time
 from pathlib import Path
+from typing import List
+
+import edsnlp
 import torch
 from confit import Cli, Config
-from typing import List
-from tqdm import tqdm
-import os
-import edsnlp
 from edsnlp.core.registries import registry
+from tqdm import tqdm
+
 from biomedics.ner.brat import BratConnector
-import time
 
 app = Cli(pretty_exceptions_show_locals=False)
+
 
 @app.command(name="infer", registry=registry)
 def infer(
@@ -23,26 +26,40 @@ def infer(
     tic = time.time()
     overrides = Config()
     if quantize:
-        overrides = overrides.merge({
-            "components": {
-                "ner": {"embedding": {"embedding": {
-                    "quantization": {
-                        "load_in_4bit": True,
-                        "bnb_4bit_compute_dtype": "float16"
+        overrides = overrides.merge(
+            {
+                "components": {
+                    "ner": {
+                        "embedding": {
+                            "embedding": {
+                                "quantization": {
+                                    "load_in_4bit": True,
+                                    "bnb_4bit_compute_dtype": "float16",
+                                },
+                                # "torch_dtype": torch.float16,
+                            }
+                        }
                     },
-                    #"torch_dtype": torch.float16,
-                }}},
-                "qualifier": {"embedding": {"embedding": {"embedding": {
-                    "quantization": {
-                        "load_in_4bit": True,
-                        "bnb_4bit_compute_dtype": "float16"
+                    "qualifier": {
+                        "embedding": {
+                            "embedding": {
+                                "embedding": {
+                                    "quantization": {
+                                        "load_in_4bit": True,
+                                        "bnb_4bit_compute_dtype": "float16",
+                                    },
+                                    # "torch_dtype": torch.float16,
+                                }
+                            }
+                        }
                     },
-                    #"torch_dtype": torch.float16,
-                }}}},
+                }
             }
-        })
-    nlp = edsnlp.load(model_path, overrides=overrides).to("cuda" if torch.cuda.is_available() else "cpu")
-    
+        )
+    nlp = edsnlp.load(model_path, overrides=overrides).to(
+        "cuda" if torch.cuda.is_available() else "cpu"
+    )
+
     for input_folder, output_folder in zip(input_folders, output_folders):
         assert os.path.isdir(input_folder)
         print(f"Input format is BRAT in {input_folder}")
@@ -88,9 +105,15 @@ def infer(
             ],
         )
         output_brat.docs2brat(predicted)
-        print(f"NER Prediction is saved in BRAT format in the following folder: {output_folder}")
+        print(
+            (
+                f"NER Prediction is saved in BRAT format in the following folder: "
+                f"{output_folder}"
+            )
+        )
     tac = time.time()
     print(f"Processed {total_docs} docs in {tac - tic} secondes")
+
 
 if __name__ == "__main__":
     app()

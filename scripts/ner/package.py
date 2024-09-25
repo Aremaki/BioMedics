@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Optional
 
+import edsnlp
 from confit import Cli
 from tomlkit import parse
 
-import edsnlp
 from biomedics import BASE_DIR
+
 app = Cli(pretty_exceptions_show_locals=False)
 
 DEFAULT_MODEL = BASE_DIR / "models" / "ner" / "expe_ner_final" / "model-last"

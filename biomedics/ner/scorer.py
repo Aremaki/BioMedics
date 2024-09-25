@@ -1,16 +1,16 @@
-import time
-import shutil
-from typing import Dict
-from pathlib import Path
-
-import edsnlp
 import os
+import shutil
+import time
+from pathlib import Path
+from typing import Dict
+
 from confit import validate_arguments
 from edsnlp import Pipeline
 from edsnlp.scorers import Scorer
 from edsnlp.utils.bindings import BINDING_SETTERS
 from edsnlp.utils.span_getters import get_spans
 from tqdm import tqdm
+
 from biomedics.ner.brat import BratConnector
 
 
@@ -55,7 +55,12 @@ class EdsMedicScorer:
                         BratConnector(
                             ner_folder,
                         ).docs2brat(ner_preds)
-                        print(f"NER Prediction is saved in BRAT format in the following folder: {ner_folder}")                    
+                        print(
+                            (
+                                "NER Prediction is saved in BRAT format in the "
+                                f"following folder: {ner_folder}"
+                            )
+                        )
                 for name, scorer in self.ner_scorers.items():
                     scores[name] = scorer(docs, ner_preds)
 
@@ -85,7 +90,7 @@ class EdsMedicScorer:
                     if output:
                         qlf_folder = output / "qlf"
                         if os.path.exists(qlf_folder):
-                            shutil.rmtree(qlf_folder)                        
+                            shutil.rmtree(qlf_folder)
                         BratConnector(
                             qlf_folder,
                             attributes=[
@@ -97,7 +102,10 @@ class EdsMedicScorer:
                                 # "Allergie",
                             ],
                         ).docs2brat(qlf_preds)
-                        print(f"Qualification Prediction is saved in BRAT format in the following folder: {qlf_folder}") 
+                        print(
+                            "Qualification Prediction is saved in BRAT format in the "
+                            f"following folder: {qlf_folder}"
+                        )
                 for name, scorer in self.qlf_scorers.items():
                     scores[name] = scorer(docs, qlf_preds)
 
@@ -118,4 +126,3 @@ class EdsMedicScorer:
                 return scores, list(per_doc_scores.values())
 
             return scores
-

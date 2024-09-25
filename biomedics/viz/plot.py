@@ -1,8 +1,9 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib_venn import venn3, venn2
-import altair as alt
 from functools import reduce
+
+import altair as alt
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib_venn import venn2, venn3
 
 
 def plot_hist(
@@ -268,13 +269,16 @@ def plot_venn(
             )
     if first:
         plt.title(
-            f"{english_title} ({total_patients} patients) \n\n {method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)"
+            (
+                f"{english_title} ({total_patients} patients) \n\n "
+                f"{method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)"
+            )
         )
     else:
         plt.title(f"{method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)")
     # plt.show()
-    
-    
+
+
 def plot_summary_med(
     nlp_patient_group,
     structured_patient_group,
@@ -353,6 +357,7 @@ def plot_summary_med(
         axis=1,
     )
     return table.style.set_caption(f"{cohort_name} cohort ({n_patient} patients)")
+
 
 def plot_summary_bio(
     nlp_patient_group,

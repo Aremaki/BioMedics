@@ -1,12 +1,17 @@
-import pandas as pd
 import os
-from biomedics import BASE_DIR
+
+import pandas as pd
 from loguru import logger
+
+from biomedics import BASE_DIR
+
 
 def filter_bio_structured(config_anabio_codes):
     logger.info("Filter laboratory tests from structured data")
     bio_result_folder_path = BASE_DIR / "data" / "final_results"
-    bio_from_structured_data = pd.read_pickle(bio_result_folder_path / "bio_from_structured_data.pkl")
+    bio_from_structured_data = pd.read_pickle(
+        bio_result_folder_path / "bio_from_structured_data.pkl"
+    )
     logger.debug("raw df: {}", bio_from_structured_data.shape)
     codes_to_keep = {"disease": [], "concept_cd": [], "bio": []}
     for disease, anabio_codes in config_anabio_codes.items():
@@ -22,14 +27,21 @@ def filter_bio_structured(config_anabio_codes):
         path_to_res = bio_result_folder_path / disease
         if not os.path.exists(path_to_res):
             os.mkdir(path_to_res)
-        filtered_bio[filtered_bio.disease == disease].to_pickle(path_to_res / "filtered_bio_from_structured_data.pkl")
-    filtered_bio.to_pickle(bio_result_folder_path / "filtered_bio_from_structured_data.pkl")
+        filtered_bio[filtered_bio.disease == disease].to_pickle(
+            path_to_res / "filtered_bio_from_structured_data.pkl"
+        )
+    filtered_bio.to_pickle(
+        bio_result_folder_path / "filtered_bio_from_structured_data.pkl"
+    )
     logger.debug("processed df: {}", filtered_bio.shape)
-    
+
+
 def filter_med_structured(config_atc_codes):
     logger.info("Filter drug treatments from structured data")
     med_result_folder_path = BASE_DIR / "data" / "final_results"
-    med_from_structured_data = pd.read_pickle(med_result_folder_path / "med_from_structured_data.pkl")
+    med_from_structured_data = pd.read_pickle(
+        med_result_folder_path / "med_from_structured_data.pkl"
+    )
     logger.debug("raw df: {}", med_from_structured_data.shape)
     codes_to_keep = {"disease": [], "valueflag_cd": [], "med": []}
     for disease, atc_codes in config_atc_codes.items():
@@ -52,10 +64,15 @@ def filter_med_structured(config_atc_codes):
         path_to_res = med_result_folder_path / disease
         if not os.path.exists(path_to_res):
             os.mkdir(path_to_res)
-        filtered_med[filtered_med.disease == disease].to_pickle(path_to_res / "filtered_med_from_structured_data.pkl")
-    filtered_med.to_pickle(med_result_folder_path / "filtered_med_from_structured_data.pkl")
+        filtered_med[filtered_med.disease == disease].to_pickle(
+            path_to_res / "filtered_med_from_structured_data.pkl"
+        )
+    filtered_med.to_pickle(
+        med_result_folder_path / "filtered_med_from_structured_data.pkl"
+    )
     logger.debug("processed df: {}", filtered_med.shape)
-    
+
+
 def filter_bio_nlp(config_cui_codes):
     logger.info("Filter laboratory tests from unstructured data")
     bio_result_folder_path = BASE_DIR / "data" / "final_results"
@@ -63,7 +80,9 @@ def filter_bio_nlp(config_cui_codes):
     res_part_filtered_list = []
     for disease, cui_codes in config_cui_codes.items():
         ### Load each res dataset to concat them in one unique df
-        res_part_df = pd.read_pickle(bio_result_folder_path / disease / "pred_bio_coder_all.pkl")
+        res_part_df = pd.read_pickle(
+            bio_result_folder_path / disease / "pred_bio_coder_all.pkl"
+        )
         logger.debug("raw df for {}: {}", disease, res_part_df.shape)
         res_part_df["disease"] = disease
 
@@ -93,7 +112,8 @@ def filter_bio_nlp(config_cui_codes):
         res_part_filtered_list.append(res_part_filtered)
     res_filtered_df = pd.concat(res_part_filtered_list)
     res_filtered_df.to_pickle(bio_result_folder_path / "filtered_bio_from_nlp.pkl")
-    
+
+
 def filter_med_nlp(config_atc_codes):
     logger.info("Filter drug treatments from unstructured data")
     med_result_folder_path = BASE_DIR / "data" / "final_results"
@@ -101,7 +121,9 @@ def filter_med_nlp(config_atc_codes):
     res_part_filtered_list = []
     for disease, atc_codes in config_atc_codes.items():
         ### Load each res dataset to concat them in one unique df
-        res_part_df = pd.read_pickle(med_result_folder_path / disease / "pred_med_fuzzy_jaro_winkler.pkl")
+        res_part_df = pd.read_pickle(
+            med_result_folder_path / disease / "pred_med_fuzzy_jaro_winkler.pkl"
+        )
         logger.debug("raw df for {}: {}", disease, res_part_df.shape)
         res_part_df["disease"] = disease
         res_part_df["instance_num"] = res_part_df["source"].str.slice(stop=-4)

@@ -1,17 +1,18 @@
 import os
+
 os.environ["OMP_NUM_THREADS"] = "16"
 
-import typer
-import edsnlp
-
-import pickle
+from collections import namedtuple
 from pathlib import Path
 
+import edsnlp
 import pandas as pd
-from biomedics.normalization.coder_inference.main import coder_wrapper
-from edsnlp.connectors import BratConnector
+import typer
 from confection import Config
-from collections import namedtuple
+from edsnlp.connectors import BratConnector
+
+from biomedics.normalization.coder_inference.main import coder_wrapper
+
 
 def coder_inference_cli(
     model_path: Path,
@@ -23,10 +24,14 @@ def coder_inference_cli(
     config = namedtuple("x", config_dict.keys())(*config_dict.values())
     if str(input_dir).endswith(".pkl"):
         df = pd.read_pickle(input_dir)
-        if not config.column_name_to_normalize in df.columns:
+        if config.column_name_to_normalize not in df.columns:
             if "terms_linked_to_measurement" in df.columns:
                 df = df.explode("terms_linked_to_measurement")
-                df = df.rename(columns={"terms_linked_to_measurement": config.column_name_to_normalize})
+                df = df.rename(
+                    columns={
+                        "terms_linked_to_measurement": config.column_name_to_normalize
+                    }
+                )
             else:
                 df[config.column_name_to_normalize] = df.term
     else:
@@ -44,10 +49,13 @@ def coder_inference_cli(
                     for qualifier in config.qualifiers:
                         ent_data.append(getattr(ent._, qualifier))
                     ents_list.append(ent_data)
-        df_columns = ["term", "source", "span_converted", config.column_name_to_normalize] + config.qualifiers
-        df = pd.DataFrame(
-            ents_list, columns=df_columns
-        )
+        df_columns = [
+            "term",
+            "source",
+            "span_converted",
+            config.column_name_to_normalize,
+        ] + config.qualifiers
+        df = pd.DataFrame(ents_list, columns=df_columns)
     df = df[~df[config.column_name_to_normalize].isna()]
     df = coder_wrapper(df, config, model_path)
     if not os.path.exists(output_dir.parent):

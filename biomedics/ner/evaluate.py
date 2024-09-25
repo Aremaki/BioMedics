@@ -1,10 +1,9 @@
-import time
 from copy import deepcopy
 from timeit import default_timer as timer
 from typing import Any, Dict, Iterable, List, Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from spacy.language import _copy_examples
 from spacy.tokens import Doc
 from spacy.training import Example, validate_examples
@@ -19,12 +18,46 @@ def get_annotation(docs, qualification=False):
         for label, ents in doc.spans.items():
             for ent in ents:
                 if qualification:
-                    default_attribute_val = ["Certain", "Present", "Unknown", False, None, "False"]
-                    certainty_attr = "Certainty_" + str(ent._.Certainty) if ent._.Certainty not in default_attribute_val else None
-                    temporal_attr = "Temporality_" + str(ent._.Temporality) if ent._.Temporality not in default_attribute_val else None
-                    neg_attr = "Negation_" + str(ent._.Negation) if ent._.Negation not in default_attribute_val else None
-                    action_attr = "Action_" + str(ent._.Action) if ent._.Action not in default_attribute_val else None
-                    entities.add((ent.text, label, ent.start_char, ent.end_char, certainty_attr, temporal_attr, neg_attr, action_attr))
+                    default_attribute_val = [
+                        "Certain",
+                        "Present",
+                        "Unknown",
+                        False,
+                        None,
+                        "False",
+                    ]
+                    certainty_attr = (
+                        "Certainty_" + str(ent._.Certainty)
+                        if ent._.Certainty not in default_attribute_val
+                        else None
+                    )
+                    temporal_attr = (
+                        "Temporality_" + str(ent._.Temporality)
+                        if ent._.Temporality not in default_attribute_val
+                        else None
+                    )
+                    neg_attr = (
+                        "Negation_" + str(ent._.Negation)
+                        if ent._.Negation not in default_attribute_val
+                        else None
+                    )
+                    action_attr = (
+                        "Action_" + str(ent._.Action)
+                        if ent._.Action not in default_attribute_val
+                        else None
+                    )
+                    entities.add(
+                        (
+                            ent.text,
+                            label,
+                            ent.start_char,
+                            ent.end_char,
+                            certainty_attr,
+                            temporal_attr,
+                            neg_attr,
+                            action_attr,
+                        )
+                    )
                 else:
                     entities.add((ent.text, label, ent.start_char, ent.end_char))
         entities = list(entities)
@@ -34,13 +67,13 @@ def get_annotation(docs, qualification=False):
 
 
 def overlap(start_g, end_g, start_p, end_p, exact):
-    if exact == False:
+    if exact is False:
         if start_p <= start_g and end_p >= end_g:
             return 1
         else:
             return 0
 
-    if exact == True:
+    if exact is True:
         if start_g == start_p and end_g == end_p:
             return 1
         else:
@@ -78,23 +111,39 @@ def compute_scores(
             [ent[4:] for ent in doc[1:]] for doc in ents_gold
         ]  # get all the entities from the various documents of ents_gold
         gold_attributes = set(
-            [attribute for sublist in gold_attributes for item in sublist for attribute in item  if attribute]
+            [
+                attribute
+                for sublist in gold_attributes
+                for item in sublist
+                for attribute in item
+                if attribute
+            ]
         )  # flatten and transform it to a set to get unique values
         gold_labels = gold_labels.union(gold_attributes)
         pred_attributes = [
             [ent[4:] for ent in doc[1:]] for doc in ents_pred
         ]  # get all the entities from the various documents of ents_gold
         pred_attributes = set(
-            [attribute for sublist in pred_attributes for item in sublist for attribute in item if attribute]
+            [
+                attribute
+                for sublist in pred_attributes
+                for item in sublist
+                for attribute in item
+                if attribute
+            ]
         )  # flatten and transform it to a set to get unique values
         pred_labels = pred_labels.union(pred_attributes)
     if labels_to_keep:
         results = {  # we create a dic with the labels of the dataset (CHEM, BIO...)
-            label: {} for label in pred_labels.union(gold_labels) if label in labels_to_keep
+            label: {}
+            for label in pred_labels.union(gold_labels)
+            if label in labels_to_keep
         }
     elif labels_to_remove:
         results = {  # we create a dic with the labels of the dataset (CHEM, BIO...)
-            label: {} for label in pred_labels.union(gold_labels) if label not in labels_to_remove
+            label: {}
+            for label in pred_labels.union(gold_labels)
+            if label not in labels_to_remove
         }
     else:
         results = {  # we create a dic with the labels of the dataset (CHEM, BIO...)
@@ -108,11 +157,16 @@ def compute_scores(
     results_by_doc = {doc: deepcopy(results) for doc in docs}
 
     for i in range(len(ents_gold)):  # iterate through doc
-        # list of doc, inside each of them is a quadrupet ['text','label','start_char','stop_char']
         doc_id = ents_gold[i][0]
         if qualification:
-            ents_gold_doc = [(ent[1], ent[2], ent[3], ent[4], ent[5], ent[6], ent[7]) for ent in ents_gold[i][1:]]
-            ents_pred_doc = [(ent[1], ent[2], ent[3], ent[4], ent[5], ent[6], ent[7]) for ent in ents_pred[i][1:]]            
+            ents_gold_doc = [
+                (ent[1], ent[2], ent[3], ent[4], ent[5], ent[6], ent[7])
+                for ent in ents_gold[i][1:]
+            ]
+            ents_pred_doc = [
+                (ent[1], ent[2], ent[3], ent[4], ent[5], ent[6], ent[7])
+                for ent in ents_pred[i][1:]
+            ]
         else:
             ents_gold_doc = [(ent[1], ent[2], ent[3]) for ent in ents_gold[i][1:]]
             ents_pred_doc = [(ent[1], ent[2], ent[3]) for ent in ents_pred[i][1:]]
@@ -135,8 +189,6 @@ def compute_scores(
                     label_p = ent[0]
                     start_p = ent[1]
                     stop_p = ent[2]
-
-                    # exact is given as parameter because the overlap function take into account if we want an exact match or an inclusive match
                     if (
                         label_g == label_p
                         and overlap(start_g, stop_g, start_p, stop_p, exact) > 0
@@ -147,11 +199,15 @@ def compute_scores(
                             for i in range(len(attribute_g)):
                                 if attribute_g[i] in results.keys():
                                     if attribute_g[i] == attribute_p[i]:
-                                        results_by_doc[doc_id][attribute_g[i]]["TP"] += 1
+                                        results_by_doc[doc_id][attribute_g[i]][
+                                            "TP"
+                                        ] += 1
                                         results[attribute_g[i]]["TP"] += 1
                                     else:
-                                        results_by_doc[doc_id][attribute_g[i]]["FN"] += 1
-                                        results[attribute_g[i]]["FN"] += 1   
+                                        results_by_doc[doc_id][attribute_g[i]][
+                                            "FN"
+                                        ] += 1
+                                        results[attribute_g[i]]["FN"] += 1
                         continue
 
                 if r:
@@ -167,7 +223,6 @@ def compute_scores(
                             if attribute_g[i] in results.keys():
                                 results_by_doc[doc_id][attribute_g[i]]["FN"] += 1
                                 results[attribute_g[i]]["FN"] += 1
-                    
 
         for ent in ents_pred_doc:
             label_p = ent[0]
@@ -200,10 +255,12 @@ def compute_scores(
                                     if attribute_p[i] == attribute_g[i]:
                                         pass
                                     else:
-                                        results_by_doc[doc_id][attribute_p[i]]["FP"] += 1
+                                        results_by_doc[doc_id][attribute_p[i]][
+                                            "FP"
+                                        ] += 1
                                         results[attribute_p[i]]["FP"] += 1
                         continue
-                             
+
                 if r:
                     if match_label:
                         results_by_doc[doc_id][label_p]["FP"] += 1
@@ -229,7 +286,7 @@ def compute_scores(
     # we will use this copy of the results dataframe
     results_list = deepcopy(results)
 
-    # We transform the result dictionnary value from int to list to be able to append the new ones
+    # We transform the result dictionnary value from int to list
     for key, value in results_list.items():
         for k, v in value.items():
             results_list[key][k] = [v]
@@ -261,11 +318,9 @@ def compute_scores(
                 replace=True,
             )
             micro_avg_draw = {"TP": 0, "FN": 0, "FP": 0}
-            results_draw = (
-                {  # we create a dic with the labels of the dataset (CHEM, BIO...)
-                    label: {} for label in results.keys()
-                }
-            )
+            results_draw = {  # we create a dic with the labels of the dataset
+                label: {} for label in results.keys()
+            }
             for label in results_draw.keys():
                 results_draw[label]["Precision"] = 0
                 results_draw[label]["TP"] = 0
@@ -322,8 +377,7 @@ def compute_scores(
         results_list[entity]["F1"] = []
         for i in range(n_draw):
             results_list[entity]["N_entity"].append(
-                results_list[entity]["TP"][i]
-                + results_list[entity]["FN"][i]
+                results_list[entity]["TP"][i] + results_list[entity]["FN"][i]
             )
             if results_list[entity]["TP"][i] + results_list[entity]["FP"][i] != 0:
                 results_list[entity]["Precision"].append(
@@ -361,7 +415,7 @@ def compute_scores(
                 )
             else:
                 results_list[entity]["F1"].append(0)
-    # we aim at displaying the "true" observe value with confidence interval corresponding to the top 5 and 95% of the bootstrapped data
+    # we aim at displaying the "true" observe value with confidence interval
     lower_confidence_interval = {
         label: {
             k: round(np.quantile(v, alpha / 2), digits)
@@ -379,7 +433,7 @@ def compute_scores(
         for label in results_list.keys()
     }
 
-    # we create a dict result_panel with the same keys as results_list but with the values of the nested dict being empty
+    # we create a dict result_panel with the same keys as results_list
     result_panel = {
         label: {
             k: ""
@@ -422,12 +476,7 @@ def compute_scores(
             + "]"
         )
         result_panel[key]["F1"] = (
-            str(round(f1, digits))
-            + "\\n["
-            + str(f1_down) 
-            + "-" 
-            + str(f1_up) 
-            + "]"
+            str(round(f1, digits)) + "\\n[" + str(f1_down) + "-" + str(f1_up) + "]"
         )
         result_panel[key]["N_entity"] = (
             str(n_entity)
@@ -486,9 +535,12 @@ def evaluate_test(
     Dict[str, Any]
         The evaluation results.
     """
-    ents_pred, ents_gold = get_annotation(pred_docs, qualification), get_annotation(gold_docs, qualification)
-    ents_pred.sort(key=lambda l: l[0])
-    ents_gold.sort(key=lambda l: l[0])
+    ents_pred, ents_gold = (
+        get_annotation(pred_docs, qualification),
+        get_annotation(gold_docs, qualification),
+    )
+    ents_pred.sort(key=lambda ents: ents[0])
+    ents_gold.sort(key=lambda ents: ents[0])
 
     scores = compute_scores(
         ents_gold,

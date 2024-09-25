@@ -1,30 +1,14 @@
-#!/usr/bin/env python
-# coding: utf-8
-# %%
-
-# # Build prediction file
-#
-# From our files with NER prediction, extract a pandas data frame to work on entities easily
-#
-
-# %%
-
-
-import collections
-import math
 import re
 from os import listdir
 from os.path import basename, isdir, isfile, join
 
-import numpy as np
 import pandas as pd
 
 
 def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
-
     assert isdir(IN_BRAT_DIR)
 
-    ENTITY_REGEX = re.compile("^(.\d+)\t([^ ]+) ([^\t]+)\t(.*)$")
+    ENTITY_REGEX = re.compile("^(.\\d+)\t([^ ]+) ([^\t]+)\t(.*)$")
 
     data = []
     patients = []
@@ -72,7 +56,9 @@ def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
                         start = end + 1
                     terms = dict(sorted(terms.items()))
                     term = " ".join(terms.values())
-                    offsets = " ".join([str(list(terms.keys())[0][0]), str(list(terms.keys())[-1][-1])])
+                    offsets = " ".join(
+                        [str(list(terms.keys())[0][0]), str(list(terms.keys())[-1][-1])]
+                    )
                 if (labels is None) or (label in labels):
                     data.append([ann_id, term, label, basename(ann_path), offsets])
 

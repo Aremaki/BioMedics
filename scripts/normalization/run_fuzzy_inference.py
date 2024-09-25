@@ -1,11 +1,12 @@
 import os
-os.environ["OMP_NUM_THREADS"] = "16"
 
-import typer
+os.environ["OMP_NUM_THREADS"] = "16"
 
 from pathlib import Path
 
 import pandas as pd
+import typer
+
 from biomedics.normalization.fuzzy.main import FuzzyNormaliser
 
 
@@ -18,7 +19,6 @@ def normalize_med_cli(
     method: str,
     threshold: float,
 ):
-    
     drug_dict = pd.read_pickle(drug_dict_path)
     normaliser = FuzzyNormaliser(
         str(input_dir),
@@ -32,6 +32,7 @@ def normalize_med_cli(
     if not os.path.exists(output_dir.parent):
         os.makedirs(output_dir.parent)
     df.to_pickle(output_dir)
+
 
 if __name__ == "__main__":
     typer.run(normalize_med_cli)

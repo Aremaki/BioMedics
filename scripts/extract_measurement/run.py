@@ -1,6 +1,8 @@
 import sys
+
 from edstoolbox import SparkApp
 from loguru import logger
+
 from biomedics.extract_measurement.main import bio_post_processing
 
 # Initialize app
