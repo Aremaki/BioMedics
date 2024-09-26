@@ -113,12 +113,13 @@ The model used for NER and qualification comes from [EDS-Medic](https://gitlab.e
 
 <img src="figures/ner_qualif_model.svg" alt="ner_qualif_model">
 
-> Requirements:
+#### Requirements:
 - The training of this model requires annotated discharge summaries in BRAT format.
 - The training also requires a word embedding model, we recommend to use [EDS-CamemBERT-fine-tuned](https://arxiv.org/abs/2207.12940) available in the AP-HP's model catalogue or [CamemBERT-bio](https://huggingface.co/almanach/camembert-bio-base) available on Hugging Face. Place it in the `models/word_embedding` folder.
 - Modify or create your own configuration in `configs/ner/<your_config>.cfg`: You can set the path of your training and testing data folder, set the hyperparameters of the model, set the training parameters...
 
-> Run:
+
+#### Run:
 Training, evaluation and inference are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
 ```shell
@@ -145,7 +146,7 @@ The normalization for laboratory test is based on CODER, a BERT-based model fine
 
 <img src="figures/normalization_lab.svg" alt="normalization_lab">
 
-> Requirements:
+##### Requirements:
 - Download a word embedding model, we recommend to use [CODER-all](https://huggingface.co/GanjinZero/coder_all) available on Hugging Face. Place it in the `models/word_embedding` folder.
 - Download the [full release](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html) of UMLS and follow `data/umls/manage_umls.ipynb` notebook.
 
@@ -155,10 +156,10 @@ The normalization for drug names is a fuzzy matching on a knowledge dictionnary.
 
 <img src="figures/normalization_drug.svg" alt="normalization_drug">
 
-> Requirement:
+##### Requirements:
 - Run `python data/drug_knowledge/dic_generation.py` in order to create the drug knowledge dictionary.
 
-> Run:
+##### Run:
 Both normalizations are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
 ```shell
