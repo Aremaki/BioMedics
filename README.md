@@ -21,6 +21,24 @@
 </p>
 </div>
 
+## Study
+
+This repositoy contains the computer code that has been executed to generate the results of the article:
+```
+@unpublished{biomedics,
+author = {Adam Remaki and Jacques Ung and Pierre Pages and Perceval Wajsburt and Guillaume Faure and Thomas Petit-Jean and Xavier Tannier and Christel Gérardin},
+title = {Improving phenotyping of patients with immune-mediated inflammatory diseases through automated processing of discharge summaries: a multicenter cohort study},
+note = {Manuscript submitted for publication},
+year = {2024}
+}
+```
+
+## Data and model availability
+
+The data and trained models are available via a secure Jupyter interface in a kubernetes cluster. Access to the clinical data warehouse's raw data can be granted following the process described on its website: [www.eds.aphp.fr](https://eds.aphp.fr/). A prior validation of the access by the local institutional review board is required (**IRB number: CSE200093**). In the case of non-AP-HP researchers, the signature of a collaboration contract is mandatory.
+
+If you are AP-HP researchers, you can use your own data in BRAT format.
+
 ## Overall pipelines
 
 BioMedics stands on the shoulders of the library [EDS-NLP](https://github.com/aphp/edsnlp) (a collaborative NLP framework that aims primarily at extracting information from French clinical notes).
@@ -28,8 +46,9 @@ BioMedics aims specifically at extracting laboratory test and drug information f
 
 <img src="figures/overall_pipelines.svg" alt="overall_pipelines">
 
+## How to run the code on AP-HP's data platform
 
-## Setup
+### 1. Setup
 
 - In order to process large-scale data, the study uses [Spark 2.4](https://spark.apache.org/docs/2.4.8/index.html) (an open-source engine for large-scale data processing) which requires to:
 
@@ -70,9 +89,10 @@ source .venv/bin/activate
 ```shell
 poetry install
 ```
-## How to run the code on AP-HP's data platform
 
-### 1. Extract cohort:
+### 2. Extract cohort:
+
+This step will extract the study cohort with spark query and will save the discharge summaries in BRAT format in the `data/CRH/raw` folder. If you use another cohort you can skip this step and place your data in the same folder.
 
 - Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
 
@@ -87,12 +107,18 @@ cd scripts/create_dataset
 bash run.sh
 ```
 
-### 2. NER + Qualification
+### 3. NER + Qualification
 
 The model used for NER and qualification comes from [EDS-Medic](https://gitlab.eds.aphp.fr/entrep-t-de-donn-es-de-sant/eds-tools/datasciencetools/eds-medic) which have been developed by the data science team of AP-HP (Assistance Publique – Hôpitaux de Paris).
 
 <img src="figures/ner_qualif_model.svg" alt="ner_qualif_model">
 
+> Requirements:
+- The training of this model requires annotated discharge summaries in BRAT format.
+- The training also requires a word embedding model, we recommend to use [EDS-CamemBERT-fine-tuned](https://arxiv.org/abs/2207.12940) available in the AP-HP's model catalogue or [CamemBERT-bio](https://huggingface.co/almanach/camembert-bio-base) available on Hugging Face. Place it in the `models/word_embedding` folder.
+- Modify or create your own configuration in `configs/ner/<your_config>.cfg`: You can set the path of your training and testing data folder, set the hyperparameters of the model, set the training parameters...
+
+> Run:
 Training, evaluation and inference are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
 ```shell
@@ -100,11 +126,9 @@ cd scripts/ner
 sbtach run.sh
 ```
 
-Note: data and trained models used for the study are not available as they are sensitive data (patient data). You can use your own data in BRAT format.
+### 4. Extract measurement
 
-### 3. Extract measurement
-
-It aims at extracting values and units from complete laboratory test in the text. It is based on regular expression processed at very high speed with spark engine.
+It aims at extracting values and units from complete laboratory test in the text. It is based on regular expression processed at very high speed with spark engine. The algorithm has been implemented by the data science team of Pitié-Salpêtrière Hospital.
 
 <img src="figures/extract_measurement.svg" alt="extract_measurement">
 
@@ -113,32 +137,46 @@ cd scripts/extract_measurement
 sbtach run.sh
 ```
 
-### 4. Normalization
+### 5. Normalization
 
-The normalization for laboratory test is based on CODER a BERT-based model finetuned on the UMLS:
+#### Laboratory tests
+
+The normalization for laboratory test is based on CODER, a BERT-based model finetuned on the UMLS:
 
 <img src="figures/normalization_lab.svg" alt="normalization_lab">
+
+> Requirements:
+- Download a word embedding model, we recommend to use [CODER-all](https://huggingface.co/GanjinZero/coder_all) available on Hugging Face. Place it in the `models/word_embedding` folder.
+- Download the [full release](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html) of UMLS and follow `data/umls/manage_umls.ipynb` notebook.
+
+#### Drugs
 
 The normalization for drug names is a fuzzy matching on a knowledge dictionnary. This dictionary is an aggregation of two open source dictionaries of drug names with their corresponding ATC codes: the UMLS restricted to the ATC vocabulary and the Unique Drug Interoperability Repository (RUIM) created by the French National Agency for Medicines and Health Products Safety (ANSM):
 
 <img src="figures/normalization_drug.svg" alt="normalization_drug">
 
+> Requirement:
+- Run `python data/drug_knowledge/dic_generation.py` in order to create the drug knowledge dictionary.
+
+> Run:
 Both normalizations are gathered into one sbatch but you can comment the part you would like to skip in `run.sh`:
 
 ```shell
 cd scripts/normalization/
 sbtach run.sh
 ```
-### 5. Post processed results for clinical application
+### 6. Filter results for clinical application
+
+This step filter results according to the laboratory tests and drug treatments studied. If you are studying other laboratory tests or drugs, you have to modify this step.
 
 ```shell
 cd scripts/clinical_application
 sbtach run.sh
 ```
 
-### 6. Generate figures
+### 7. Generate figures
 
-Generate figure one at a time from notebooks:
+Generate result figures of the paper from notebooks:
 
   - Create a Spark-enabled kernel with your environnement:
 
@@ -156,8 +194,6 @@ Generate figure one at a time from notebooks:
    - Open *.ipynb* and start the kernel you've just created.
      - Run the cells to obtain the table results.
 
-#### Note
-If you would like to run the scripts on a different database from the AP-HP database, you will have to adapt the python scripts with the configuration of the desired database.
 ## Project structure
 
 - `conf`: Configuration files.
@@ -167,21 +203,6 @@ If you would like to run the scripts on a different database from the AP-HP data
 - `notebooks`: Notebooks that generate figures.
 - `biomedics`: Source code.
 - `scripts`: Scripts to process data.
-
-## Study
-
-This repositoy contains the computer code that has been executed to generate the results of the article:
-```
-@unpublished{biomedics,
-author = {Adam Remaki and Jacques Ung and Pierre Pages and Perceval Wajsburt and Guillaume Faure and Thomas Petit-Jean and Xavier Tannier and Christel Gérardin},
-title = {Improving phenotyping of patients with immune-mediated inflammatory diseases through automated processing of discharge summaries: a multicenter cohort study},
-note = {Manuscript submitted for publication},
-year = {2024}
-}
-```
-The code has been executed on the OMOP database of the clinical data warehouse of the  <a href="https://eds.aphp.fr/" target="_blank">Greater Paris University Hospitals</a>
-
-- IRB number: CSE200093
 
 ## Acknowledgement
 

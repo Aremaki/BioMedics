@@ -17,7 +17,7 @@ echo -----------------
 echo NORMALIZE BIO LABELS TOTAL APHP DOCS
 echo -----------------
 
-python run_coder_inference.py ../../../../../../../data/scratch/cse200093/word-embedding/coder_all ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
+python run_coder_inference.py ../../models/word_embedding/coder_all ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
 
 echo -----------------
 echo NORMALIZE MED LABELS TOTAL APHP DOCS
@@ -42,7 +42,7 @@ do
     echo NORMALIZE BIO LABELS
     echo -----------------
 
-    python run_coder_inference.py ../../../../../../../data/scratch/cse200093/word-embedding/coder_all ../../data/final_results/$disease/pred_with_measurement.pkl ../../data/final_results/$disease/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
+    python run_coder_inference.py ../../models/word_embedding/coder_all ../../data/final_results/$disease/pred_with_measurement.pkl ../../data/final_results/$disease/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
 
     echo -----------------
     echo NORMALIZE MED LABELS
