@@ -14,50 +14,64 @@ source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
 conda deactivate
 
 echo -----------------
-echo NORMALIZE BIO LABELS TOTAL APHP DOCS
-echo -----------------
-
-python run_coder_inference.py ../../models/word_embedding/coder_all ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
-
-echo -----------------
 echo NORMALIZE MED LABELS TOTAL APHP DOCS
 echo -----------------
 
-python run_fuzzy_inference.py ../../data/drug_knowledge/final_dict.pkl ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_med_fuzzy_jw.pkl Chemical_and_drugs True jaro_winkler 0.8
-
-start_time="$(date -u +%s)"
+python run_fuzzy_inference.py ../../data/drug_knowledge/final_dict.pkl ../../data/CRH/pred_v4/sclerodermie_systemique_ner ../../data/CRH/pred_v4/sclerodermie_systemique_norm/pred_med_fuzzy_jw.pkl Chemical_and_drugs True jaro_winkler 0.8
 
 echo -----------------
-echo NORMALIZE BIO AND MED
+echo NORMALIZE BIO LABELS TOTAL APHP DOCS
 echo -----------------
 
-for disease in "lupus_erythemateux_dissemine" "maladie_de_takayasu" "sclerodermie_systemique" "syndrome_des_anti-phospholipides"
-do
+python run_coder_inference.py ../../../../../../../data/scratch/cse200093/word-embedding/coder_all ../../data/CRH/pred_v4/sclerodermie_systemique_measurement/pred_with_measurement.pkl ../../data/CRH/pred_v4/sclerodermie_systemique_norm/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
 
-    echo -----------------
-    echo PROCESS $disease
-    echo -----------------
 
-    echo -----------------
-    echo NORMALIZE BIO LABELS
-    echo -----------------
 
-    python run_coder_inference.py ../../models/word_embedding/coder_all ../../data/final_results/$disease/pred_with_measurement.pkl ../../data/final_results/$disease/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
+# echo -----------------
+# echo NORMALIZE BIO LABELS TOTAL APHP DOCS
+# echo -----------------
 
-    echo -----------------
-    echo NORMALIZE MED LABELS
-    echo -----------------
+# python run_coder_inference.py ../../../../../../../data/scratch/cse200093/word-embedding/coder_all ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
 
-    python run_fuzzy_inference.py ../../data/drug_knowledge/final_dict.pkl ../../data/CRH/pred/$disease ../../data/final_results/$disease/pred_med_fuzzy_jaro_winkler.pkl Chemical_and_drugs True jaro_winkler 0.8
-    end_time="$(date -u +%s)"
-    elapsed="$(($end_time-$start_time))"
-    echo "Total of $elapsed seconds elapsed for $disease"
+# echo -----------------
+# echo NORMALIZE MED LABELS TOTAL APHP DOCS
+# echo -----------------
 
-done
+# python run_fuzzy_inference.py ../../data/drug_knowledge/final_dict.pkl ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/ner ../../data/annotated_CRH/post_processed/expe_complete_pipe/pred/NER_Norm/pred_med_fuzzy_jw.pkl Chemical_and_drugs True jaro_winkler 0.8
 
-end_time="$(date -u +%s)"
-elapsed="$(($end_time-$start_time))"
-echo "Total of $elapsed seconds elapsed for process"
+# start_time="$(date -u +%s)"
+
+# echo -----------------
+# echo NORMALIZE BIO AND MED
+# echo -----------------
+
+# for disease in "lupus_erythemateux_dissemine" "maladie_de_takayasu" "sclerodermie_systemique" "syndrome_des_anti-phospholipides"
+# do
+
+#     echo -----------------
+#     echo PROCESS $disease
+#     echo -----------------
+
+#     echo -----------------
+#     echo NORMALIZE BIO LABELS
+#     echo -----------------
+
+#     python run_coder_inference.py ../../../../../../../data/scratch/cse200093/word-embedding/coder_all ../../data/final_results/$disease/pred_with_measurement.pkl ../../data/final_results/$disease/pred_bio_coder_all.pkl ../../configs/normalization/bio_config.cfg
+
+#     echo -----------------
+#     echo NORMALIZE MED LABELS
+#     echo -----------------
+
+#     python run_fuzzy_inference.py ../../data/drug_knowledge/final_dict.pkl ../../data/CRH/pred/$disease ../../data/final_results/$disease/pred_med_fuzzy_jaro_winkler.pkl Chemical_and_drugs True jaro_winkler 0.8
+#     end_time="$(date -u +%s)"
+#     elapsed="$(($end_time-$start_time))"
+#     echo "Total of $elapsed seconds elapsed for $disease"
+
+# done
+
+# end_time="$(date -u +%s)"
+# elapsed="$(($end_time-$start_time))"
+# echo "Total of $elapsed seconds elapsed for process"
 
 echo --EXTRACTION_FINISHED---
 

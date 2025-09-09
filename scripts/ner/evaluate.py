@@ -33,12 +33,12 @@ def flatten_dict(d, depth=-1, path="", current_depth=0):
 @app.command(name="evaluate", registry=registry)
 def evaluate(
     *,
-    data: EdsMedicReader,
+    data: EdsMedicReader,  # type: ignore
     model_path: Path = BASE_DIR / "artifacts/model-last",
-    scorer: EdsMedicScorer,
+    scorer: EdsMedicScorer,  # type: ignore
     data_seed: int = 42,
     quantize: bool = False,
-    output: Path = None,
+    output: Path = None,  # type: ignore
 ):
     test_metrics_path = model_path.parent / "test_metrics.json"
     per_doc_path = model_path.parent / "test_metrics_per_doc.jsonl"
@@ -78,7 +78,7 @@ def evaluate(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
     with set_seed(data_seed):
-        val_docs: List[spacy.tokens.Doc] = list(data(nlp))
+        val_docs: List[spacy.tokens.Doc] = list(data(nlp))  # type: ignore
     scores, per_doc = scorer(nlp, val_docs, per_doc=True, output=output)
     print(
         pd.DataFrame.from_dict(

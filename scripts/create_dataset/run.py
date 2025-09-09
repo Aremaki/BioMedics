@@ -1,6 +1,6 @@
 import sys
 
-from edstoolbox import SparkApp
+from edstoolbox import SparkApp  # type: ignore
 from loguru import logger
 
 from biomedics.create_dataset.main import create_dataset

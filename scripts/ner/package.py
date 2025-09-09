@@ -23,7 +23,7 @@ def package(
         doc = parse(f.read())
 
     try:
-        pyproject_model_name = str(doc["tool"]["edsnlp"]["model_name"])
+        pyproject_model_name = str(doc["tool"]["edsnlp"]["model_name"])  # type: ignore
     except KeyError:  # pragma: no cover
         pyproject_model_name = None
 
@@ -35,7 +35,7 @@ def package(
             "[tool.edsnlp]\n"
             'model_name = "..."\n'
         )
-    nlp = edsnlp.load(model)
+    nlp = edsnlp.load(model)  # type: ignore
     nlp.package(name or pyproject_model_name, **kwargs)
 
 

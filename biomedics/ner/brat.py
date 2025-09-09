@@ -8,7 +8,7 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Union
 import pandas as pd
 from joblib import Parallel, delayed
 from loguru import logger
-from spacy import Language
+from spacy import Language  # type: ignore
 from spacy.tokens import Doc, Span
 from spacy.util import filter_spans
 from tqdm import tqdm
@@ -191,7 +191,9 @@ def load_from_brat(path: str, merge_spaced_fragments: bool = True) -> Dict:
                 except Exception:
                     raise Exception(
                         "Could not parse line {} from {}: {}".format(
-                            line_idx, filename.replace(".txt", ".ann"), repr(line)
+                            line_idx,
+                            filename.replace(".txt", ".ann"),  # type: ignore
+                            repr(line),  # type: ignore
                         )
                     )
     return {
@@ -254,6 +256,16 @@ def export_to_brat(doc, txt_filename, overwrite_txt=False, overwrite_ann=False):
                                 file=f,
                             )
                             attribute_idx += 1
+            # if "relations" in doc:
+            #     for i, relation in enumerate(doc["relations"]):
+            #         entity_from = entities_ids[relation["from_entity_id"]]
+            #         entity_to = entities_ids[relation["to_entity_id"]]
+            #         print(
+            #             "R{}\t{} Arg1:{} Arg2:{}\t".format(
+            #                 i + 1, str(relation["label"]), entity_from, entity_to
+            #             ),
+            #             file=f,
+            #         )
 
 
 class BratConnector(object):
@@ -333,11 +345,11 @@ class BratConnector(object):
         )
         with bar:
             annotations = Parallel(n_jobs=self.n_jobs)(
-                delayed(load_and_rename)(self.full_path(filename))
+                delayed(load_and_rename)(self.full_path(filename))  # type: ignore
                 for filename in filenames
             )
 
-        return annotations
+        return annotations  # type: ignore
 
     def brat2docs(self, nlp: Language, run_pipe=False) -> List[Doc]:
         """
@@ -424,9 +436,9 @@ class BratConnector(object):
             docs.append(doc)
 
         if self.span_groups is None:
-            self.span_groups = sorted(list(encountered_span_groups))
+            self.span_groups = sorted(list(encountered_span_groups))  # type: ignore
         if self.attr_map is None:
-            self.attr_map = {k: k for k in encountered_attributes}
+            self.attr_map = {k: k for k in encountered_attributes}  # type: ignore
         return docs
 
     def doc2brat(self, doc: Doc) -> None:

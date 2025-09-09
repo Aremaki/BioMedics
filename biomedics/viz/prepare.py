@@ -2,15 +2,8 @@ import pandas as pd
 
 from biomedics import BASE_DIR
 
-regex_pos = (
-    r"([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|"
-    r"[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+|presente?s?|presences?)"
-)
-
-regex_neg = (
-    r"([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|"
-    r"[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e']|absente?s?|absences?|indetectables?)"
-)
+regex_pos = r"([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+|presente?s?|presences?)"
+regex_neg = r"([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e']|absente?s?|absences?|indetectables?)"
 
 
 def prepare_structured_bio_df(disease, config, complete_case_only=False):

@@ -15,6 +15,7 @@ class TextPreprocessor:
         if not self.cased:
             txt = unidecode(
                 txt.lower()
+                .replace(r"\n", " ")
                 .replace("-", " ")
                 .replace("ag ", "antigene ")
                 .replace("ac ", "anticorps ")
@@ -24,6 +25,7 @@ class TextPreprocessor:
         else:
             txt = unidecode(
                 txt.replace("-", " ")
+                .replace(r"\n", " ")
                 .replace("ag ", "antigene ")
                 .replace("ac ", "anticorps ")
                 .replace("antigenes ", "antigene ")

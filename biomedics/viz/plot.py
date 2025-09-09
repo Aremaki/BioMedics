@@ -1,4 +1,5 @@
 from functools import reduce
+from typing import Optional
 
 import altair as alt
 import matplotlib.pyplot as plt
@@ -13,7 +14,7 @@ def plot_hist(
     tabular_filtered_df,
     title: bool = False,
     smooth: bool = False,
-    top_title: str = None,
+    top_title: Optional[str] = None,
     methods=["Tabular", "NLP - Tabular", "NLP + Tabular"],
 ):
     alt.data_transformers.disable_max_rows()
@@ -90,7 +91,7 @@ def plot_hist(
                 base = alt.Chart(
                     method_filtered_bio,
                     title=alt.TitleParams(
-                        text=title_method if first else "",
+                        text=title_method if first else "",  # type: ignore
                         orient="left",
                         anchor="middle",
                         fontSize=24,
@@ -262,20 +263,17 @@ def plot_venn(
         total_pos = patient_group[
             patient_group[bio_venn["A"]] | patient_group[bio_venn["B"]]
         ].patient_num.nunique()
-    for idx, subset in enumerate(venn.subset_labels):
+    for idx, subset in enumerate(venn.subset_labels):  # type: ignore
         if subset:
             subset.set_text(
                 f"{subset.get_text()}\n{int(subset.get_text())/total_patients*100:.1f}%"
             )
     if first:
         plt.title(
-            (
-                f"{english_title} ({total_patients} patients) \n\n "
-                f"{method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)"
-            )
+            f"{english_title} ({total_patients} patients) \n\n {method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)"  # type: ignore
         )
     else:
-        plt.title(f"{method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)")
+        plt.title(f"{method}: {total_pos} ({total_pos/total_patients * 100:.1f} %)")  # type: ignore
     # plt.show()
 
 
@@ -299,7 +297,7 @@ def plot_summary_med(
         + " ("
         + (benefit_nlp_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )
@@ -312,7 +310,7 @@ def plot_summary_med(
     nlp_summary["Untructured data"] = (
         nlp_summary["Detected"].astype(str)
         + " ("
-        + (nlp_summary["Detected"] / n_patient * 100).astype(float).round(1).astype(str)
+        + (nlp_summary["Detected"] / n_patient * 100).astype(float).round(2).astype(str)
         + " %)"
     )
     nlp_summary = nlp_summary.drop(columns=["Detected"])
@@ -326,7 +324,7 @@ def plot_summary_med(
         + " ("
         + (structued_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )
@@ -346,7 +344,7 @@ def plot_summary_med(
         + " ("
         + (nlp_structued_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )
@@ -396,7 +394,7 @@ def plot_summary_bio(
         + " ("
         + (benefit_nlp_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )
@@ -409,7 +407,7 @@ def plot_summary_bio(
     nlp_summary["Untructured data"] = (
         nlp_summary["Detected"].astype(str)
         + " ("
-        + (nlp_summary["Detected"] / n_patient * 100).astype(float).round(1).astype(str)
+        + (nlp_summary["Detected"] / n_patient * 100).astype(float).round(2).astype(str)
         + " %)"
     )
     nlp_summary = nlp_summary.drop(columns=["Detected"])
@@ -423,7 +421,7 @@ def plot_summary_bio(
         + " ("
         + (structued_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )
@@ -443,7 +441,7 @@ def plot_summary_bio(
         + " ("
         + (nlp_structued_summary["Detected"] / n_patient * 100)
         .astype(float)
-        .round(1)
+        .round(2)
         .astype(str)
         + " %)"
     )

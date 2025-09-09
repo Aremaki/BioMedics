@@ -2,16 +2,15 @@ import os
 import shutil
 import time
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
+import edsnlp
 from confit import validate_arguments
 from edsnlp import Pipeline
 from edsnlp.scorers import Scorer
 from edsnlp.utils.bindings import BINDING_SETTERS
 from edsnlp.utils.span_getters import get_spans
 from tqdm import tqdm
-
-from biomedics.ner.brat import BratConnector
 
 
 @validate_arguments
@@ -24,7 +23,9 @@ class EdsMedicScorer:
         self.ner_scorers = ner
         self.qlf_scorers = qualifier
 
-    def __call__(self, nlp: Pipeline, docs, per_doc=False, output: Path = None):
+    def __call__(
+        self, nlp: Pipeline, docs, per_doc=False, output: Optional[Path] = None
+    ):
         with nlp.train(False):
             scores = {}
             docs = list(docs)
@@ -52,22 +53,22 @@ class EdsMedicScorer:
                         ner_folder = output / "ner"
                         if os.path.exists(ner_folder):
                             shutil.rmtree(ner_folder)
-                        BratConnector(
+                        edsnlp.data.write_standoff(  # type: ignore
+                            ner_preds,
                             ner_folder,
-                        ).docs2brat(ner_preds)
+                            overwrite=True,
+                            span_getter=["*"],
+                        )
                         print(
-                            (
-                                "NER Prediction is saved in BRAT format in the "
-                                f"following folder: {ner_folder}"
-                            )
+                            f"NER Prediction is saved in BRAT format in the following folder: {ner_folder}"
                         )
                 for name, scorer in self.ner_scorers.items():
-                    scores[name] = scorer(docs, ner_preds)
+                    scores[name] = scorer(docs, ner_preds)  # type: ignore
 
                     if per_doc:
                         for doc, pred in zip(docs, ner_preds):
                             note_id = doc._.note_id
-                            doc_scores = scorer([doc], [pred])
+                            doc_scores = scorer([doc], [pred])  # type: ignore
                             per_doc_scores[note_id][name] = {
                                 label: {
                                     key: value
@@ -91,28 +92,32 @@ class EdsMedicScorer:
                         qlf_folder = output / "qlf"
                         if os.path.exists(qlf_folder):
                             shutil.rmtree(qlf_folder)
-                        BratConnector(
+                        edsnlp.data.write_standoff(  # type: ignore
+                            qlf_preds,
                             qlf_folder,
-                            attributes=[
+                            overwrite=True,
+                            span_getter=["*"],
+                            span_attributes=[
                                 "Negation",
-                                # "Family",
+                                "Family",
                                 "Temporality",
                                 "Certainty",
                                 "Action",
-                                # "Allergie",
+                                "Allergie",
+                                "RefTemp",
+                                "AttDate",
                             ],
-                        ).docs2brat(qlf_preds)
+                        )
                         print(
-                            "Qualification Prediction is saved in BRAT format in the "
-                            f"following folder: {qlf_folder}"
+                            f"Qualification Prediction is saved in BRAT format in the following folder: {qlf_folder}"
                         )
                 for name, scorer in self.qlf_scorers.items():
-                    scores[name] = scorer(docs, qlf_preds)
+                    scores[name] = scorer(docs, qlf_preds)  # type: ignore
 
                     if per_doc:
                         for doc, pred in zip(docs, qlf_preds):
                             note_id = doc._.note_id
-                            doc_scores = scorer([doc], [pred])
+                            doc_scores = scorer([doc], [pred])  # type: ignore
                             per_doc_scores[note_id][name] = {
                                 label: {
                                     key: value

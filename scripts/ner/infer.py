@@ -18,8 +18,8 @@ app = Cli(pretty_exceptions_show_locals=False)
 def infer(
     *,
     input_folders: List[Path],
-    output_folders: List[Path],
     model_path: Path,
+    output_folders: List[Path],
     quantize: bool = False,
 ):
     total_docs = 0
@@ -59,12 +59,11 @@ def infer(
     nlp = edsnlp.load(model_path, overrides=overrides).to(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
-
     for input_folder, output_folder in zip(input_folders, output_folders):
         assert os.path.isdir(input_folder)
         print(f"Input format is BRAT in {input_folder}")
         input_brat = BratConnector(input_folder)
-        input_docs = list(input_brat.brat2docs(nlp))
+        input_docs = list(input_brat.brat2docs(nlp))  # type: ignore
 
         total_docs += len(input_docs)
         print("Number of docs:", len(input_docs))
@@ -85,31 +84,34 @@ def infer(
                 or "context" in k
                 or "split" in k
                 or "Action" in k
-                # or "Allergie" in k
+                or "Allergie" in k
                 or "Certainty" in k
                 or "Temporality" in k
-                # or "Family" in k
+                or "Family" in k
                 or "Negation" in k
+                or "RefTemp" in k
+                or "AttDate" in k
             }
             predicted.append(doc)
 
-        output_brat = BratConnector(
+        edsnlp.data.write_standoff(  # type: ignore
+            predicted,
             output_folder,
-            attributes=[
+            overwrite=True,
+            span_getter=["*"],
+            span_attributes=[
                 "Negation",
-                # "Family",
+                "Family",
                 "Temporality",
                 "Certainty",
                 "Action",
-                # "Allergie",
+                "Allergie",
+                "RefTemp",
+                "AttDate",
             ],
         )
-        output_brat.docs2brat(predicted)
         print(
-            (
-                f"NER Prediction is saved in BRAT format in the following folder: "
-                f"{output_folder}"
-            )
+            f"NER Prediction is saved in BRAT format in the following folder: {output_folder}"
         )
     tac = time.time()
     print(f"Processed {total_docs} docs in {tac - tic} secondes")

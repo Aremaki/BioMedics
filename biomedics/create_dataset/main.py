@@ -21,24 +21,16 @@ def _get_term_from_c_name(c_name):
 
 
 def get_docs_df(sql, cim10_list, min_len=1000):
-    """Get the EHRs with at least one ICD10 code mentionned and one `CRH-HOSPI`
-    or `CRH-S` recorded with at least 1000 characters"""
+    """Get the EHRs with at least one ICD10 code mentionned and one `CRH-HOSPI` or `CRH-S` recorded with at least 1000 characters"""
     docs = sql(
-        """
-        SELECT doc.instance_num, doc.observation_blob, doc.encounter_num,
-               doc.patient_num, doc.start_date AS note_date, cim10.concept_cd,
-               visit.age_visit_in_years_num, visit.start_date,
-        FROM i2b2_observation_doc AS doc
-        JOIN i2b2_observation_cim10 AS cim10
-        ON doc.encounter_num = cim10.encounter_num
-        JOIN i2b2_visit AS visit
-        ON doc.encounter_num = visit.encounter_num
-        WHERE (doc.concept_cd == 'CR:CRH-HOSPI' OR doc.concept_cd == 'CR:CRH-S')
-        """
+        """SELECT doc.instance_num, doc.observation_blob, doc.encounter_num, doc.patient_num, doc.start_date AS note_date, visit.age_visit_in_years_num, visit.start_date, cim10.concept_cd FROM i2b2_observation_doc AS doc
+                  JOIN i2b2_observation_cim10 AS cim10 ON doc.encounter_num = cim10.encounter_num JOIN i2b2_visit AS visit ON doc.encounter_num = visit.encounter_num
+                  WHERE (doc.concept_cd == 'CR:CRH-HOSPI' OR doc.concept_cd == 'CR:CRH-S')
+                  """
     )
-    # Filter on cim10_list and export to Pandas
+    ### Filter on cim10_list and export to Pandas
     docs_df = docs.filter(docs.concept_cd.isin(cim10_list)).toPandas().dropna()
-    # Keep documents with some information at least
+    ### Keep documents with some information at least
     docs_df = docs_df.loc[docs_df["observation_blob"].apply(len) > min_len].reset_index(
         drop=True
     )
@@ -64,25 +56,14 @@ def get_docs_df(sql, cim10_list, min_len=1000):
 
 
 def get_bio_df(sql, spark, docs_df):
-    """Get the EHRs with at least one ICD10 code mentionned, one `CRH-HOSPI` or `CRH-S`
-    recorded with at least 1000 characters and one laboratory test recorded"""
+    """Get the EHRs with at least one ICD10 code mentionned, one `CRH-HOSPI` or `CRH-S` recorded with at least 1000 characters and one laboratory test recorded"""
     bio = sql(
-        """SELECT
-        bio.instance_num AS bio_id,
-        bio.concept_cd,
-        bio.units_cd,
-        bio.nval_num,
-        bio.tval_char,
-        bio.quantity_num,
-        bio.confidence_num,
-        bio.encounter_num, bio.patient_num, bio.start_date, concept.name_char
-        FROM i2b2_observation_lab AS bio
-        JOIN i2b2_concept AS concept
-        ON bio.concept_cd = concept.concept_cd"""
+        """SELECT bio.instance_num AS bio_id, bio.concept_cd, bio.units_cd, bio.nval_num, bio.tval_char, bio.quantity_num, bio.confidence_num, bio.encounter_num, bio.patient_num, bio.start_date, concept.name_char
+        FROM i2b2_observation_lab AS bio JOIN i2b2_concept AS concept ON bio.concept_cd = concept.concept_cd"""
     )
     bio = bio.select(
         *[
-            F.col(c).cast("string").alias(c) if t == "timestamp" else F.col(c)
+            F.col(c).cast("string").alias(c) if t == "timestamp" else F.col(c)  # type: ignore
             for c, t in bio.dtypes
         ]
     )
@@ -107,21 +88,14 @@ def get_bio_df(sql, spark, docs_df):
 
 
 def get_med_df(sql, spark, docs_df):
-    """
-    Get the EHRs with at least one ICD10 code mentioned, one `CRH-HOSPI` or
-    `CRH-S` recorded with at least 1000 characters and one drug treatment recorded
-    """
+    """Get the EHRs with at least one ICD10 code mentionned, one `CRH-HOSPI` or `CRH-S` recorded with at least 1000 characters and one drug treatment recorded"""
     med = sql(
-        """
-        SELECT med.instance_num AS med_id, med.concept_cd, med.value_flag_cd,
-        med.encounter_num, med.patient_num, med.start_date, concept.name_char
-        FROM i2b2_observation_med AS med
-        JOIN i2b2_concept AS concept ON med.concept_cd = concept.concept_cd
-        """
+        """SELECT med.instance_num AS med_id, med.concept_cd, med.valueflag_cd, med.encounter_num, med.patient_num, med.start_date, concept.name_char
+        FROM i2b2_observation_med AS med JOIN i2b2_concept AS concept ON med.concept_cd = concept.concept_cd"""
     )
     med = med.select(
         *[
-            F.col(c).cast("string").alias(c) if t == "timestamp" else F.col(c)
+            F.col(c).cast("string").alias(c) if t == "timestamp" else F.col(c)  # type: ignore
             for c, t in med.dtypes
         ]
     )
@@ -143,10 +117,7 @@ def get_med_df(sql, spark, docs_df):
 
 
 def create_dataset(sql, spark, config):
-    """
-    Save the documents, the laboratory tests, and the drug treatments of the
-    study cohort in the specified folders
-    """
+    """Save the docuemnts, the laboratory tests and the drug treatments of the study cohort in the specified folders"""
     # Get docs and save it for each disease
     docs_all_diseases = []
     for disease, cim10_list in config["cim10"].items():

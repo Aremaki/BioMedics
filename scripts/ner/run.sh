@@ -9,58 +9,49 @@
 #SBATCH --error=logs/slurm-%j-stderr.log
 #SBATCH --container-image /scratch/images/sparkhadoop.sqsh  --container-mounts=/export/home/$USER:/export/home/$USER,/data/scratch/$USER:/data/scratch/$USER --container-mount-home --container-writable
 source $HOME/.user_conda/miniconda/etc/profile.d/conda.sh # appel de ce script
-cd "/export/home/cse200093/Adam/biomedics/scripts/normalization"
+cd "/export/home/cse200093/Adam/biomedics/scripts/ner"
 source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
 conda deactivate
 
-for config_name in "medline" "emea" "measurement" "complete_pipe" "ner_final"
-do
+# echo -----------------
+# echo TRAINING
+# echo -----------------
+# start_time="$(date -u +%s)"
 
-    echo -----------------
-    echo $config_name TRAINING
-    echo -----------------
-    start_time="$(date -u +%s)"
+# python train.py --config ../../configs/ner/config_ner_final_v4.cfg
 
-    python train.py --config ../../configs/ner/config_$config_name.cfg
+# end_time="$(date -u +%s)"
+# elapsed="$(($end_time-$start_time))"
+# echo -----------------
+# echo "Total of $elapsed seconds elapsed for TRAINING"
+# echo -----------------
 
-    end_time="$(date -u +%s)"
-    elapsed="$(($end_time-$start_time))"
-    echo -----------------
-    echo "Total of $elapsed seconds elapsed for $config_name TRAINING"
-    echo -----------------
+echo -----------------
+echo INFERENCE
+echo -----------------
+start_time="$(date -u +%s)"
 
-    echo -----------------
-    echo $config_name EVALUATION
-    echo -----------------
-    start_time="$(date -u +%s)"
+python infer.py --config ../../configs/ner/config_ner_final_v4.cfg
 
-    python evaluate.py --config ../../configs/ner/config_$config_name.cfg
+end_time="$(date -u +%s)"
+elapsed="$(($end_time-$start_time))"
+echo -----------------
+echo "Total of $elapsed seconds elapsed for INFERENCE"
+echo -----------------
 
-    end_time="$(date -u +%s)"
-    elapsed="$(($end_time-$start_time))"
-    echo -----------------
-    echo "Total of $elapsed seconds elapsed for $config_name EVALUATION"
-    echo -----------------
-done
+# echo -----------------
+# echo EVALUATION
+# echo -----------------
+# start_time="$(date -u +%s)"
 
-for config_name in "complete_pipe" "ner_final"
-do
+# python evaluate.py --config ../../configs/ner/config_ner_final_v4.cfg
 
-    echo -----------------
-    echo $config_name INFERENCE
-    echo -----------------
-    start_time="$(date -u +%s)"
+# end_time="$(date -u +%s)"
+# elapsed="$(($end_time-$start_time))"
+# echo -----------------
+# echo "Total of $elapsed seconds elapsed for EVALUATION"
+# echo -----------------
 
-    python infer.py --config ../../configs/ner/config_$config_name.cfg
+# echo --NER_FINISHED---
 
-    end_time="$(date -u +%s)"
-    elapsed="$(($end_time-$start_time))"
-    echo -----------------
-    echo "Total of $elapsed seconds elapsed for $config_name INFERENCE"
-    echo -----------------
-done
-
-
-echo --NER_FINISHED---
-
-echo ---------------
+# echo ---------------

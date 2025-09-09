@@ -120,7 +120,7 @@ class BatchSizeArg:
 
 
 if TYPE_CHECKING:
-    BatchSizeArg = Tuple[int, str]  # noqa: F811
+    BatchSizeArg = Tuple[int, str]  # type: ignore
 
 
 class LengthSortedBatchSampler:
@@ -211,7 +211,7 @@ class LengthSortedBatchSampler:
         assert (
             isinstance(self.dataset, Sized) or self.buffer_size is not None
         ), "Dataset must have a length or buffer_size must be specified"
-        buffer_size = self.buffer_size or math.ceil(total_count / self.batch_size)
+        buffer_size = self.buffer_size or math.ceil(total_count / self.batch_size)  # type: ignore
 
         # Sort sequences by length +- some noise
         sorted_sequences = chain.from_iterable(
@@ -311,7 +311,7 @@ class TrainingDataLoaderFactory:
 
     def __init__(
         self,
-        data: AsList[EdsMedicReader],
+        data: AsList[EdsMedicReader],  # type: ignore
         batch_size: BatchSizeArg,
         grad_accumulation_max_tokens: int,
         pipe_names: Optional[List[str]] = None,
@@ -331,19 +331,19 @@ class TrainingDataLoaderFactory:
                 for module_name, module in pipe.named_component_modules()
                 if isinstance(module, Transformer)
             )
-            train_docs = [d for td in self.data for d in td(nlp)]
+            train_docs = [d for td in self.data for d in td(nlp)]  # type: ignore
             nlp.post_init(train_docs)
             preprocessed = list(nlp.preprocess_many(train_docs, supervision=True))
             print(
                 "Training samples count for "
-                f"{', '.join(self.pipe_names)}: {len(preprocessed)}"
+                f"{', '.join(self.pipe_names)}: {len(preprocessed)}"  # type: ignore
             )
             return DataLoader(
-                preprocessed,
+                preprocessed,  # type: ignore
                 batch_sampler=LengthSortedBatchSampler(
                     preprocessed,
-                    batch_size=self.batch_size[0],
-                    batch_unit=self.batch_size[1],
+                    batch_size=self.batch_size[0],  # type: ignore
+                    batch_unit=self.batch_size[1],  # type: ignore
                 ),
                 collate_fn=SubBatchCollater(
                     nlp,
@@ -357,9 +357,9 @@ class TrainingDataLoaderFactory:
 def train(
     *,
     nlp: Pipeline,
-    train_dataloader: AsList[TrainingDataLoaderFactory],
-    val_data: AsList[EdsMedicReader],
-    test_data: AsList[EdsMedicReader],
+    train_dataloader: AsList[TrainingDataLoaderFactory],  # type: ignore
+    val_data: AsList[EdsMedicReader],  # type: ignore
+    test_data: AsList[EdsMedicReader],  # type: ignore
     seed: int = 42,
     max_steps: int = 1000,
     transformer_lr: float = 5e-5,
@@ -368,7 +368,7 @@ def train(
     max_grad_norm: float = 5.0,
     warmup_rate: float = 0.1,
     loss_scales: Dict[str, float] = {},
-    scorer: EdsMedicScorer,
+    scorer: EdsMedicScorer,  # type: ignore
     output_dir: Optional[Path] = None,
     cpu: bool = False,
 ):
@@ -421,7 +421,7 @@ def train(
     model_path = output_dir / "model-last"
     train_metrics_path = output_dir / "train_metrics.json"
     os.makedirs(output_dir, exist_ok=True)
-    val_docs: List[Doc] = [d for vd in val_data for d in vd(nlp)]
+    val_docs: List[Doc] = [d for vd in val_data for d in vd(nlp)]  # type: ignore
 
     trainable_pipe_names = {name for name, pipe in nlp.torch_components()}
     print("Trainable components: " + ", ".join(trainable_pipe_names))
@@ -451,7 +451,7 @@ def train(
             print("Preprocessing data")
             dataloaders = [
                 dl(nlp)
-                for dl in train_dataloader
+                for dl in train_dataloader  # type: ignore
                 if not dl.pipe_names or set(dl.pipe_names) & set(pipe_names)
             ]
 
@@ -558,9 +558,9 @@ def train(
                                 raise ValueError(f"NaN loss at component {name}")
 
                     accelerator.backward(loss)
-                    del loss, res, key, value, mini_batch, name, pipe
+                    del loss, res, key, value, mini_batch, name, pipe  # type: ignore
 
-                torch.nn.utils.clip_grad_norm_(grad_params, max_grad_norm)
+                torch.nn.utils.clip_grad_norm_(grad_params, max_grad_norm)  # type: ignore
                 optim.step()
 
     return nlp

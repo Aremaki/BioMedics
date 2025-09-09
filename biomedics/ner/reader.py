@@ -1,5 +1,5 @@
 import random
-from typing import Any, Generator, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional
 
 import edsnlp
 import spacy
@@ -34,18 +34,18 @@ def subset_doc(doc: Doc, start: int, end: int) -> Doc:
             (
                 prefix,
                 ext,
-                s if s is None else max(s - start_char, 0),
-                e if e is None else min(e - start_char, end_char - start_char),
+                s if s is None else max(s - start_char, 0),  # type: ignore
+                e if e is None else min(e - start_char, end_char - start_char),  # type: ignore
             ): v
             for (prefix, ext, s, e), v in doc.user_data.items()
-            if (s is None or start_char <= s <= end_char)
-            or (e is None or start_char <= e <= end_char)
+            if (s is None or start_char <= s <= end_char)  # type: ignore
+            or (e is None or start_char <= e <= end_char)  # type: ignore
         }
-    )
+    )  # type: ignore
 
     for name, group in doc.spans.items():
         new_doc.spans[name] = [
-            spacy.tokens.Span(
+            spacy.tokens.Span(  # type: ignore
                 new_doc,
                 max(0, span.start - start),
                 min(end, span.end) - start,
@@ -96,14 +96,14 @@ class EdsMedicReader:
         self.multi_sentence = multi_sentence
         self.filter_expr = filter_expr
 
-    def __call__(self, nlp) -> Generator[Doc, None, None]:
+    def __call__(self, nlp) -> List[Doc]:  # type: ignore
         filter_fn = eval(f"lambda doc:{self.filter_expr}") if self.filter_expr else None
 
-        blank_nlp = edsnlp.Pipeline(nlp.lang, vocab=nlp.vocab, vocab_config=None)
+        blank_nlp = edsnlp.Pipeline(nlp.lang, vocab=nlp.vocab, vocab_config=None)  # type: ignore
         blank_nlp.add_pipe("eds.normalizer")
         blank_nlp.add_pipe("eds.sentences")
 
-        docs = blank_nlp.pipe(self.source)
+        docs = blank_nlp.pipe(self.source)  # type: ignore
 
         count = 0
 
@@ -113,7 +113,7 @@ class EdsMedicReader:
             random.shuffle(docs)
 
         for doc in docs:
-            if 0 <= self.limit <= count:
+            if 0 <= self.limit <= count:  # type: ignore
                 break
             if not len(doc):
                 continue
@@ -123,7 +123,7 @@ class EdsMedicReader:
                 if filter_fn is not None and not filter_fn(sub_doc):
                     continue
                 if len(sub_doc.text.strip()):
-                    yield sub_doc
+                    yield sub_doc  # type: ignore
             else:
                 continue
 

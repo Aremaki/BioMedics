@@ -67,13 +67,13 @@ def get_annotation(docs, qualification=False):
 
 
 def overlap(start_g, end_g, start_p, end_p, exact):
-    if exact is False:
+    if not exact:
         if start_p <= start_g and end_p >= end_g:
             return 1
         else:
             return 0
 
-    if exact is True:
+    else:
         if start_g == start_p and end_g == end_p:
             return 1
         else:
@@ -196,18 +196,18 @@ def compute_scores(
                         r = True
                         if match_attribute:
                             attribute_p = ent[3:]
-                            for i in range(len(attribute_g)):
-                                if attribute_g[i] in results.keys():
-                                    if attribute_g[i] == attribute_p[i]:
-                                        results_by_doc[doc_id][attribute_g[i]][
+                            for i in range(len(attribute_g)):  # type: ignore
+                                if attribute_g[i] in results.keys():  # type: ignore
+                                    if attribute_g[i] == attribute_p[i]:  # type: ignore
+                                        results_by_doc[doc_id][attribute_g[i]][  # type: ignore
                                             "TP"
                                         ] += 1
-                                        results[attribute_g[i]]["TP"] += 1
+                                        results[attribute_g[i]]["TP"] += 1  # type: ignore
                                     else:
-                                        results_by_doc[doc_id][attribute_g[i]][
+                                        results_by_doc[doc_id][attribute_g[i]][  # type: ignore
                                             "FN"
                                         ] += 1
-                                        results[attribute_g[i]]["FN"] += 1
+                                        results[attribute_g[i]]["FN"] += 1  # type: ignore
                         continue
 
                 if r:
@@ -219,10 +219,10 @@ def compute_scores(
                         results_by_doc[doc_id][label_g]["FN"] += 1
                         results[label_g]["FN"] += 1
                     if match_attribute:
-                        for i in range(len(attribute_g)):
-                            if attribute_g[i] in results.keys():
-                                results_by_doc[doc_id][attribute_g[i]]["FN"] += 1
-                                results[attribute_g[i]]["FN"] += 1
+                        for i in range(len(attribute_g)):  # type: ignore
+                            if attribute_g[i] in results.keys():  # type: ignore
+                                results_by_doc[doc_id][attribute_g[i]]["FN"] += 1  # type: ignore
+                                results[attribute_g[i]]["FN"] += 1  # type: ignore
 
         for ent in ents_pred_doc:
             label_p = ent[0]
@@ -250,15 +250,15 @@ def compute_scores(
                         r = False
                         if match_attribute:
                             attribute_g = ent[3:]
-                            for i in range(len(attribute_p)):
-                                if attribute_p[i] in results.keys():
-                                    if attribute_p[i] == attribute_g[i]:
+                            for i in range(len(attribute_p)):  # type: ignore
+                                if attribute_p[i] in results.keys():  # type: ignore
+                                    if attribute_p[i] == attribute_g[i]:  # type: ignore
                                         pass
                                     else:
-                                        results_by_doc[doc_id][attribute_p[i]][
+                                        results_by_doc[doc_id][attribute_p[i]][  # type: ignore
                                             "FP"
                                         ] += 1
-                                        results[attribute_p[i]]["FP"] += 1
+                                        results[attribute_p[i]]["FP"] += 1  # type: ignore
                         continue
 
                 if r:
@@ -266,10 +266,10 @@ def compute_scores(
                         results_by_doc[doc_id][label_p]["FP"] += 1
                         results[label_p]["FP"] += 1
                     if match_attribute:
-                        for i in range(len(attribute_p)):
-                            if attribute_p[i] in results.keys():
-                                results_by_doc[doc_id][attribute_p[i]]["FP"] += 1
-                                results[attribute_p[i]]["FP"] += 1
+                        for i in range(len(attribute_p)):  # type: ignore
+                            if attribute_p[i] in results.keys():  # type: ignore
+                                results_by_doc[doc_id][attribute_p[i]]["FP"] += 1  # type: ignore
+                                results[attribute_p[i]]["FP"] += 1  # type: ignore
     if exact:
         print("Exact match")
     else:
@@ -300,7 +300,7 @@ def compute_scores(
     proba = []
     for entity in results_list.keys():
         for test in ["TP", "FN", "FP"]:
-            label_to_draw.append(entity + "-" + test)
+            label_to_draw.append(entity + "-" + test)  # type: ignore
             proba.append(results[entity][test] / total_words)
 
     micro_avg = {
@@ -489,13 +489,13 @@ def compute_scores(
     print(f"With alpha = {alpha} and {n_draw} draws")
     output = f"With alpha = {alpha} and {n_draw} draws\n"
     for key, value in result_panel.items():
-        if "SECTION" not in key:
+        if "SECTION" not in key:  # type: ignore
             output += f"\nLabel: {key}\n"
             for metric, metric_value in value.items():
                 output += f"{metric}: {metric_value}\n"
             output += "-" * 30
 
-    result_panel["ents_per_type"] = {
+    result_panel["ents_per_type"] = {  # type: ignore
         label: {
             "p": value["Precision"],
             "r": value["Recall"],
@@ -517,8 +517,8 @@ def evaluate_test(
     n_draw: int = 500,
     alpha: float = 0.05,
     digits: int = 2,
-    labels_to_keep: List[str] = None,
-    labels_to_remove: List[str] = None,
+    labels_to_keep: Optional[List[str]] = None,
+    labels_to_remove: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Evaluate a model's pipeline components.

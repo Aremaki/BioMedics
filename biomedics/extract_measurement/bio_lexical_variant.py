@@ -1,12 +1,6 @@
 lexical_var_non_digit_values = {
-    "positif": (
-        r"(?i)([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|"
-        r"[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+)"
-    ),
-    "negatif": (
-        r"(?i)([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|"
-        r"[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e'])"
-    ),
+    "positif": r"(?i)([¦|]?positifs?|[¦|]pos?i?t?\b|[¦|]?positiv?e?s?|\bpos\b|[^a-zA-Z0-9]+(?:\+|p)[^a-zA-Z0-9]*$|^\+)",
+    "negatif": r"(?i)([¦|]?negatifs?|[¦|]neg?a?\b|[¦|]?negati?v?e?s?|\bneg\b|[^a-zA-Z0-9]+(?:\-|n)[^a-zA-Z0-9]*$|^\-|^pas\sd[e'])",
     "augmente": r"(?i)(augmentee?s?|aug)",
     "dimunue": r"(?i)(diminuee?s?|dim)",
     "depasse": r"(?i)(depassee?s?)",

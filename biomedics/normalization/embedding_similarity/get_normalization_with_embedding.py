@@ -10,7 +10,7 @@ from transformers import (
 sys.path.append("/export/home/cse200093/scratch/BioMedics/normalisation/training")
 
 
-class CoderNormalizer:
+class EmbeddingNormalizer:
     def __init__(
         self,
         model_name_or_path: str,
@@ -22,8 +22,7 @@ class CoderNormalizer:
             self.model = AutoModel.from_pretrained(model_name_or_path).to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
             self.model_from_transformers = True
-        except Exception as e:
-            print(f"Error loading model: {e}")
+        except Exception:
             self.model = torch.load(model_name_or_path).to(self.device)
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
             self.model_from_transformers = False
@@ -34,7 +33,7 @@ class CoderNormalizer:
         normalize=True,
         summary_method="CLS",
         tqdm_bar=False,
-        coder_batch_size=128,
+        batch_size=128,
     ):
         input_ids = []
         for phrase in phrase_list:
@@ -56,7 +55,7 @@ class CoderNormalizer:
                 pbar = tqdm(total=count)
             while now_count < count:
                 input_gpu_0 = torch.LongTensor(
-                    input_ids[now_count : min(now_count + coder_batch_size, count)]
+                    input_ids[now_count : min(now_count + batch_size, count)]
                 ).to(self.device)
                 if summary_method == "CLS":
                     if self.model_from_transformers:
@@ -69,20 +68,20 @@ class CoderNormalizer:
                     else:
                         embed = torch.mean(self.model.bert(input_gpu_0)[0], dim=1)
                 if normalize:
-                    embed_norm = torch.norm(embed, p=2, dim=1, keepdim=True).clamp(
+                    embed_norm = torch.norm(embed, p=2, dim=1, keepdim=True).clamp(  # type: ignore
                         min=1e-12
                     )
-                    embed = embed / embed_norm
+                    embed = embed / embed_norm  # type: ignore
                 if now_count == 0:
-                    output = embed
+                    output = embed  # type: ignore
                 else:
-                    output = torch.cat((output, embed), dim=0)
+                    output = torch.cat((output, embed), dim=0)  # type: ignore
                 if tqdm_bar:
-                    pbar.update(min(now_count + coder_batch_size, count) - now_count)
-                now_count = min(now_count + coder_batch_size, count)
+                    pbar.update(min(now_count + batch_size, count) - now_count)  # type: ignore
+                now_count = min(now_count + batch_size, count)
             if tqdm_bar:
-                pbar.close()
-        return output
+                pbar.close()  # type: ignore
+        return output  # type: ignore
 
     def get_sim_results(
         self, res_embeddings, umls_embeddings, umls_labels, umls_des, split_size=200
@@ -113,18 +112,18 @@ class CoderNormalizer:
         normalize=True,
         summary_method="CLS",
         tqdm_bar=False,
-        coder_batch_size=128,
+        batch_size=128,
     ):
         umls_embeddings = self.get_bert_embed(
-            umls_des_list, normalize, summary_method, tqdm_bar, coder_batch_size
+            umls_des_list, normalize, summary_method, tqdm_bar, batch_size
         )
         res_embeddings = self.get_bert_embed(
-            data_list, normalize, summary_method, tqdm_bar, coder_batch_size
+            data_list, normalize, summary_method, tqdm_bar, batch_size
         )
         if save_umls_embeddings_dir:
-            torch.save(umls_embeddings, save_umls_embeddings_dir)
+            torch.save(umls_embeddings, save_umls_embeddings_dir)  # type: ignore
         if save_data_embeddings_dir:
-            torch.save(res_embeddings, save_data_embeddings_dir)
+            torch.save(res_embeddings, save_data_embeddings_dir)  # type: ignore
         return self.get_sim_results(
             res_embeddings, umls_embeddings, umls_labels_list, umls_des_list
         )

@@ -1,0 +1,527 @@
+import random
+import warnings
+
+import altair as alt
+import duckdb
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import sklearn
+import torch
+from sklearn.manifold import TSNE
+from tqdm.notebook import tqdm
+from wordcloud import WordCloud
+
+from biomedics.patient_similarity.XT_distance import distance_files_by_lab
+
+warnings.filterwarnings("ignore")
+
+alt.data_transformers.disable_max_rows()
+alt.themes.enable("dark")
+
+
+def add_atc_code(doc, drug_df, text_preprocessor):
+    predicted_entities = [
+        text_preprocessor(
+            text=ent.text, remove_stopwords=True, remove_special_characters=True
+        )
+        for ent in doc.ents
+        if ent.label_ == "Chemical_and_drugs"
+    ]
+    if predicted_entities:
+        pd.DataFrame(
+            {
+                "term": [ent.text for ent in doc.spans["Chemical_and_drugs"]],
+                "term_to_norm": predicted_entities,
+            }
+        )
+        threshold = 0.8
+        merged_df = duckdb.query(
+            f"""select *, jaro_winkler_similarity(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score > {threshold}"""
+        ).to_df()
+        idx = (
+            merged_df.groupby(["term_to_norm"])["score"].transform(max)
+            == merged_df["score"]
+        )
+        merged_df = merged_df[idx]
+        ents = []
+        ents_drugs = []
+        for ent in doc.ents:
+            if ent.label_ == "Chemical_and_drugs":
+                if not ent._.Negation:
+                    ent.label_ = "Médicament"
+                    filter_df = merged_df[merged_df.term == ent.text]
+                    if not filter_df.empty:
+                        ent.kb_id_ = filter_df.label.iloc[0]
+                    ents.append(ent)
+                    ents_drugs.append(ent)
+            else:
+                ents.append(ent)
+        doc.ents = ents
+        doc.spans["Médicament"] = ents_drugs
+    return doc
+
+
+def add_label_class(doc, model, tokenizer, text_preprocessor, label_names):
+    predicted_entities = [
+        text_preprocessor(
+            text=ent.text, remove_stopwords=True, remove_special_characters=True
+        )
+        for ent in doc.ents
+        if ent.label_ == "DISO"
+    ]
+    if predicted_entities:
+        inputs = tokenizer(
+            predicted_entities,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512,
+        )
+        with torch.no_grad():
+            outputs = model(**inputs)
+        logits = outputs.logits
+        probs = torch.sigmoid(logits)
+
+        ents = []
+        ents_diso = []
+        ents_bio = []
+        i = 0
+        for ent in doc.ents:
+            if ent.label_ == "DISO":
+                ent.label_ = "Signe et symptôme"
+                if not ent._.Negation:
+                    high_confidence_labels = [
+                        label_names[j].split("_")[-1].capitalize()
+                        for j, p in enumerate(probs[i])
+                        if p > 0.8
+                    ]
+                    ent.kb_id_ = " | ".join(high_confidence_labels)
+                    ents_diso.append(ent)
+                    ents.append(ent)
+                i += 1
+            elif ent.label_ in ["BIO", "BIO_comp"]:
+                ent.label_ = "Biologie"
+                ents_bio.append(ent)
+                ents.append(ent)
+            elif ent.label_ == "Duration":
+                ent.label_ = "Durée"
+                ents.append(ent)
+            elif ent.label_ == "DATE":
+                ent.label_ = "Date"
+                ents.append(ent)
+            else:
+                ents.append(ent)
+        doc.ents = ents
+        doc.spans["Signe et symptôme"] = ents_diso
+        doc.spans["Biologie"] = ents_bio
+    return doc
+
+
+def create_source_terms(doc, selected_labels, text_preprocessor):
+    source_patient = {}
+    for selected_label in selected_labels:
+        terms = []
+        labels = []
+        for ent in doc.ents:
+            if ent.label_ == "Signe et symptôme" and ent.kb_id_:
+                if selected_label in ent.kb_id_.split(" | "):
+                    terms.append(
+                        text_preprocessor(
+                            text=ent.text,
+                            remove_stopwords=True,
+                            remove_special_characters=True,
+                        )
+                    )
+                    labels.append(ent.kb_id_)
+        if not terms:
+            return None
+        source_patient[selected_label] = (
+            pd.DataFrame({"terms": terms, "labels": labels})
+            .groupby(["terms"])
+            .size()
+            .to_dict()
+        )
+    return source_patient
+
+
+def compute_distance(
+    source_patient,
+    target_patients,
+    df_embed,
+    vectorizer,
+    selected_labels,
+):
+    selected_patients = target_patients[target_patients.labels.isin(selected_labels)]
+    sources = selected_patients["source"].drop_duplicates().tolist()
+    selected_patients = selected_patients.groupby(
+        ["source", "labels", "normalized_term"]
+    ).size()
+    distances = {}
+    for source in tqdm(
+        sources,
+        desc="Computing distances",
+        leave=True,
+        bar_format="{l_bar}{bar} | {n_fmt}/{total_fmt}",
+    ):
+        selected_patient = selected_patients[source]
+        if set(selected_patient.keys().get_level_values(0)) >= set(selected_labels):
+            distance = 0
+            for selected_label in selected_labels:
+                vector = vectorizer.fit_transform(
+                    [
+                        source_patient[selected_label],
+                        selected_patient.get(selected_label).to_dict(),
+                    ]
+                )
+                embedding_matrix = (
+                    df_embed[
+                        df_embed["normalized_term"].isin(
+                            vectorizer.get_feature_names_out()
+                        )
+                    ]
+                    .drop(columns="normalized_term")
+                    .values.tolist()
+                )
+                local_dist_matrix = sklearn.metrics.pairwise.cosine_distances(  # type: ignore
+                    embedding_matrix
+                )
+                label_distance = distance_files_by_lab(
+                    vector[0],
+                    vector[1],
+                    distance_matrix=local_dist_matrix,
+                    track_time=False,
+                    verbose=False,
+                )
+                distance += label_distance  # type: ignore
+            distances[source] = distance / len(selected_labels)
+
+    return distances
+
+
+def plot_output_treatment(
+    patient_drugs, most_similar_patients, atc_code_path, ATC_rank=5
+):
+    patient_drugs = patient_drugs[
+        patient_drugs.source.isin(most_similar_patients.keys())
+    ]
+    atc_code = pd.read_excel(atc_code_path)[["ATC_code", "Libellé français"]].rename(
+        columns={"ATC_code": "label", "Libellé français": "label_name"}
+    )
+    patient_drugs["label"] = patient_drugs.label.str[:ATC_rank]
+    atc_code["label_name"] = atc_code["label_name"].str.capitalize()
+    patient_drugs = patient_drugs.drop(columns="label_name").merge(atc_code, on="label")
+    base = alt.Chart(patient_drugs)
+
+    treatment_selection = alt.selection_point(fields=["label_name"])
+
+    label_color = alt.condition(
+        treatment_selection,
+        alt.Color(
+            "label_name:N",
+            legend=None,
+            sort="-x",
+        ),
+        alt.value("lightgray"),
+    )
+
+    treatment_chart = (
+        base.mark_bar()
+        .encode(
+            x=alt.X("distinct(source)")
+            .title("Nombre de patients traités")
+            .axis(labelFontSize=14, titleFontSize=16, orient="top"),  # X-axis on top
+            y=alt.Y("label_name:N")
+            .sort("-x")
+            .axis(
+                title="Traitements",
+                titleAngle=0,
+                titleAlign="right",
+                titleY=-2,
+                titleX=0,
+                labelFontSize=14,
+                titleFontSize=16,
+            ),
+            color=label_color,
+            tooltip=[
+                alt.Tooltip("label_name", title="Médicament"),
+                alt.Tooltip("distinct(source)", title="Nombre de patients"),
+            ],  # Tooltip added
+        )
+        .add_params(treatment_selection)
+    )
+
+    length_chart = (
+        base.transform_filter(treatment_selection)
+        .transform_aggregate(
+            unique_length_of_stay="mean(length_of_stay)",
+            groupby=["source", "label_stay"],
+        )
+        .mark_boxplot(extent=50)
+        .encode(
+            x=alt.X("label_stay")
+            .title("Durée d'hospitalisation")
+            .axis(labelFontSize=14, titleFontSize=16, orient="top"),
+            y=alt.Y("mean(unique_length_of_stay):Q")
+            .title("Nombre de jours")
+            .scale(zero=False, domainMax=50, clamp=True)
+            .axis(labelFontSize=14, titleFontSize=16),
+        )
+    ).properties(height=300)
+
+    death_chart = (
+        alt.Chart(patient_drugs, title="Décès")
+        .transform_fold(
+            [
+                "0 - Décès à 30 jours",
+                "1 - Décès à 90 jours",
+                "2 - Décès à 180 jours",
+            ],
+            as_=["death_type", "death_status"],
+        )
+        .transform_filter(treatment_selection)
+        .transform_aggregate(
+            total_alive="distinct(source)",
+            groupby=["death_type", "death_status"],
+        )
+        .transform_joinaggregate(
+            total_patients="sum(total_alive)",
+            groupby=["death_type"],
+        )
+        .transform_filter("datum.death_status == 0")
+        .transform_calculate(total_death="datum.total_patients - datum.total_alive")
+        .transform_calculate(perc_death="datum.total_death/datum.total_patients")
+        .mark_bar()
+        .encode(
+            x=alt.X("death_type:N").title("").axis(labelFontSize=14, titleFontSize=16),
+            y=alt.Y("perc_death:Q")
+            .title("Pourcentage de décès")
+            .axis(format=".1%", labelFontSize=14, titleFontSize=16)
+            .scale(zero=True),
+            tooltip=[
+                alt.Tooltip("total_death:Q", title="Nombre de décès"),
+                alt.Tooltip("total_patients:Q", title="Nombre de patients"),
+                alt.Tooltip("perc_death:Q", format=".1%", title="Pourcentage de décès"),
+            ],
+        )
+    ).properties(height=300)
+
+    output_chart = treatment_chart | (death_chart & length_chart)
+
+    return output_chart.configure_title(fontSize=16)
+
+
+def plot_similartiy_network(distances, max_distance, sample_size=500):
+    # Randomly select keys from the filtered dictionary
+    if len(distances) > sample_size:
+        sample_keys = random.sample(list(distances.keys()), k=sample_size)
+    else:
+        sample_keys = distances
+
+    # Build a new dictionary with the sampled keys
+    sampled_distances = {pid: distances[pid] for pid in sample_keys}
+    map_distances = [0] + list(sampled_distances.values())  # Random distances
+    num_nodes = len(map_distances)
+
+    # Create graph
+    G = nx.Graph()
+    G.add_nodes_from(range(num_nodes))
+    G.add_edges_from((0, i) for i in range(1, num_nodes))  # Connect all nodes to 0
+
+    # Generate spherical coordinates for uniform distribution
+    phi = np.arccos(1 - 2 * np.random.rand(num_nodes))
+    theta = 2 * np.pi * np.random.rand(num_nodes)
+
+    # Convert to Cartesian coordinates
+    pos = {
+        i: (
+            map_distances[i] * np.sin(phi[i]) * np.cos(theta[i]),
+            map_distances[i] * np.sin(phi[i]) * np.sin(theta[i]),
+            map_distances[i] * np.cos(phi[i]),
+        )
+        for i in range(num_nodes)
+    }
+
+    # Get Patient 1's position (center of sphere)
+    p1_x, p1_y, p1_z = pos[0]
+
+    # Extract edge coordinates
+    edge_x, edge_y, edge_z = [], [], []
+    for u, v in G.edges():
+        x0, y0, z0, x1, y1, z1 = *pos[u], *pos[v]
+        edge_x += [x0, x1, None]
+        edge_y += [y0, y1, None]
+        edge_z += [z0, z1, None]
+
+    # Define node sizes
+    node_sizes = [
+        30 if i == 0 else 12 for i in range(num_nodes)
+    ]  # Bigger for Patient 1
+
+    # 🎨 **Updated Colors**
+    node_colors = [
+        "#FF1493"
+        if map_distances[i] > max_distance
+        else "#00BFFF"  # Magenta for outside, Light Blue for inside
+        for i in range(num_nodes)
+    ]
+    node_colors[0] = "#FFD700"  # Patient 1 in Gold
+
+    # Add hover text for distances
+    hover_texts = [
+        f"Patient {i}<br> Distance avec P0: {map_distances[i]:.2f}"
+        for i in range(num_nodes)
+    ]
+
+    # Generate a wireframe sphere (instead of a solid sphere)
+    u = np.linspace(0, 2 * np.pi, 30)
+    v = np.linspace(0, np.pi, 15)
+
+    x_sphere = p1_x + max_distance * np.outer(np.cos(u), np.sin(v))
+    y_sphere = p1_y + max_distance * np.outer(np.sin(u), np.sin(v))
+    z_sphere = p1_z + max_distance * np.outer(np.ones_like(u), np.cos(v))
+
+    # Convert sphere into wireframe lines
+    sphere_lines = []
+    for i in range(len(u)):
+        sphere_lines.append(
+            go.Scatter3d(
+                x=x_sphere[i, :],
+                y=y_sphere[i, :],
+                z=z_sphere[i, :],
+                mode="lines",
+                line=dict(color="cyan", width=1.5),
+                hoverinfo="skip",
+                showlegend=False,
+                opacity=0.2,  # Lower opacity to avoid blocking hover
+            )
+        )
+    for j in range(len(v)):
+        sphere_lines.append(
+            go.Scatter3d(
+                x=x_sphere[:, j],
+                y=y_sphere[:, j],
+                z=z_sphere[:, j],
+                mode="lines",
+                line=dict(color="cyan", width=1.5),
+                hoverinfo="skip",
+                showlegend=False,
+                opacity=0.2,  # Lower opacity to avoid blocking hover
+            )
+        )
+
+    # Create figure with dark theme
+    fig = go.Figure()
+
+    # 🔵 Add Sphere Wireframe (Non-blocking!)
+    for line in sphere_lines:
+        fig.add_trace(line)
+
+    # 🔵 Edges
+    # fig.add_trace(
+    #     go.Scatter3d(
+    #         x=edge_x,
+    #         y=edge_y,
+    #         z=edge_z,
+    #         mode="lines",
+    #         line=dict(width=1.5, color="#808080"),  # Grayish Blue
+    #         hoverinfo="none",
+    #         showlegend=False,
+    #     )
+    # )
+
+    # 🔴 Nodes
+    fig.add_trace(
+        go.Scatter3d(
+            x=[pos[i][0] for i in G.nodes()],
+            y=[pos[i][1] for i in G.nodes()],
+            z=[pos[i][2] for i in G.nodes()],
+            mode="markers+text",
+            textposition="top center",
+            marker=dict(size=node_sizes, color=node_colors, opacity=1.0),
+            hoverinfo="text",
+            hovertext=hover_texts,
+            showlegend=False,
+        )
+    )
+
+    # Apply dark mode settings
+    fig.update_layout(
+        title="",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        font=dict(color="white"),
+        scene=dict(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            zaxis=dict(visible=False),
+            bgcolor="rgba(0, 0, 0, 0)",
+        ),
+        dragmode="turntable",  # Allows easier rotation to access inner nodes
+    )
+    return fig
+
+
+def plot_word_embeddings(sample_embed_with_lab):
+    tsne = TSNE(n_components=3, random_state=0)
+    projections = tsne.fit_transform(
+        sample_embed_with_lab.drop(columns=["normalized_term", "labels"])
+    )
+    fig = px.scatter_3d(
+        pd.DataFrame(projections, columns=["x", "y", "z"]),
+        x="x",
+        y="y",
+        z="z",
+        hover_name=sample_embed_with_lab["normalized_term"],
+        color=sample_embed_with_lab["labels"],
+        labels={"color": "Spécialité"},
+    )
+
+    fig.update_traces(marker_size=8)
+
+    fig.update_layout(
+        {
+            "paper_bgcolor": "rgba(0, 0, 0, 0)",
+            "plot_bgcolor": "rgba(0, 0, 0, 0)",
+        },
+        font=dict(color="white"),
+        scene=dict(
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            zaxis=dict(visible=False),
+        ),
+    )
+    return fig
+
+
+# Function to generate a word cloud
+def _generate_wordcloud(term_list, title):
+    text = " ".join(term_list)  # Convert list to a space-separated string
+    wordcloud = WordCloud(
+        width=800, height=400, background_color="black", colormap="cool"
+    ).generate(text)
+
+    plt.figure(figsize=(6, 3))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.title(title, fontsize=14, color="white")
+    plt.show()
+
+
+def generate_wordcloud(target_patients, selected_specialties, most_similar_patients):
+    terms_by_label = (
+        target_patients[
+            target_patients.source.isin(most_similar_patients.keys())
+            & target_patients.labels.isin(selected_specialties)
+        ]
+        .groupby("labels")
+        .agg({"normalized_term": list})
+        .to_dict(orient="index")
+    )
+    # Generate word clouds
+    plt.style.use("dark_background")  # Dark theme for better contrast
+    for label in terms_by_label.keys():
+        _generate_wordcloud(terms_by_label[label]["normalized_term"], label)

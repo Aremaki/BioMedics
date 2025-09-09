@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+# coding: utf-8
+# %%
+
+# # Build prediction file
+#
+# From our files with NER prediction, extract a pandas data frame to work on entities easily
+#
+
+# %%
+
+
 import re
 from os import listdir
 from os.path import basename, isdir, isfile, join
@@ -5,7 +17,7 @@ from os.path import basename, isdir, isfile, join
 import pandas as pd
 
 
-def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
+def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None, files_list=None):
     assert isdir(IN_BRAT_DIR)
 
     ENTITY_REGEX = re.compile("^(.\\d+)\t([^ ]+) ([^\t]+)\t(.*)$")
@@ -14,12 +26,21 @@ def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
     patients = []
 
     # extract all ann_files from IN_BRAT_DIR
-    ann_files = [
-        f
-        for f in listdir(IN_BRAT_DIR)
-        if isfile(join(IN_BRAT_DIR, f))
-        if f.endswith(".ann")
-    ]
+    if files_list is not None:
+        ann_files = [
+            f
+            for f in listdir(IN_BRAT_DIR)
+            if isfile(join(IN_BRAT_DIR, f))
+            if f.endswith(".ann")
+            if f in files_list
+        ]
+    else:
+        ann_files = [
+            f
+            for f in listdir(IN_BRAT_DIR)
+            if isfile(join(IN_BRAT_DIR, f))
+            if f.endswith(".ann")
+        ]
     for ann_file in ann_files:
         ann_path = join(IN_BRAT_DIR, ann_file)
         txt_path = ann_path[:-4] + ".txt"

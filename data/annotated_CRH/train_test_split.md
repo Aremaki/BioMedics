@@ -31,8 +31,8 @@ import os
 import shutil
 
 # Définir le répertoire source et le répertoire de destination
-source_directory = "raw/all"
-destination_directory = "post_processed/all_temp"
+source_directory = "raw/pre_anno_verified"
+destination_directory = "post_processed/pre_anno_verified_temp"
 
 # Créer le répertoire de destination s'il n'existe pas
 if os.path.exists(destination_directory):
@@ -112,8 +112,8 @@ import os
 import shutil
 
 # Définir les répertoires source et de destination
-source_directory = "post_processed/all_temp"
-destination_directory = "post_processed/all"
+source_directory = "post_processed/pre_anno_verified_temp"
+destination_directory = "post_processed/pre_anno_verified"
 
 # Créer le répertoire de destination s'il n'existe pas
 if os.path.exists(destination_directory):
@@ -189,7 +189,7 @@ shutil.rmtree(source_directory)
 print(n, "Attribute(s) updated")
 ```
 
-```python
+```python jupyter={"source_hidden": true, "outputs_hidden": true}
 import shutil
 
 if not os.path.exists("post_processed/expe_complete_pipe"):
@@ -228,7 +228,7 @@ print(f"{int(n_test/2)} test docs saved")
 print(f"{int(n_train/2)} train docs saved")
 ```
 
-```python
+```python jupyter={"source_hidden": true, "outputs_hidden": true}
 import shutil
 
 if not os.path.exists("post_processed/expe_measurement"):
@@ -268,7 +268,7 @@ print(f"{int(n_test/2)} test docs saved")
 print(f"{int(n_train/2)} train docs saved")
 ```
 
-```python
+```python jupyter={"outputs_hidden": true, "source_hidden": true}
 if not os.path.exists("post_processed/expe_ner_final"):
     os.mkdir("post_processed/expe_ner_final")
 
@@ -412,6 +412,497 @@ brat = c.BratConnector(
 brat.docs2brat(TEST)
 
 print("Test saved")
+```
+
+```python jupyter={"outputs_hidden": true, "source_hidden": true}
+if not os.path.exists("post_processed/expe_ner_final_v2"):
+    os.mkdir("post_processed/expe_ner_final_v2")
+
+# INPUT PATH
+PATH = "post_processed/guillaume"
+
+# OUTPUT PATH
+PATH_train = "post_processed/expe_ner_final_v2/train"
+PATH_test = "post_processed/expe_ner_final_v2/test"
+if os.path.exists(PATH_train):
+    shutil.rmtree(PATH_train)
+os.mkdir(PATH_train)
+if os.path.exists(PATH_test):
+    shutil.rmtree(PATH_test)
+os.mkdir(PATH_test)
+
+# Parameters
+draw = 5000
+attributes = [
+    "Negation",
+    "Family",
+    "Temporality",
+    "Certainty",
+    "Action",
+    "Allergie",
+    "RefTemp",
+    "AttDate",
+]
+labels = [
+    "DISO",
+    "Constantes",
+    "BIO_comp",
+    "Chemical_and_drugs",
+    "dosage",
+    "BIO",
+    "strength",
+    "form",
+    "Date",
+    "Duration",
+    "Frequency",
+]
+
+brat = c.BratConnector(
+    PATH,
+    attributes=attributes,
+)
+empty = edsnlp.blank("eds")
+df = brat.brat2docs(empty)
+
+import numpy as np
+import random
+from collections import Counter
+from tqdm import tqdm
+
+
+n = len(df)
+
+# total
+counter_tot_attributes = Counter(
+    attr
+    for doc in df
+    for ent in doc.ents
+    for attr in attributes
+    if getattr(ent._, attr)
+)  # Full distribution of the attributes
+print(counter_tot_attributes)
+counter_tot_labels = Counter(
+    label
+    for doc in df
+    for label in doc.spans.keys()
+    for i in range(len(doc.spans[label]))
+    if label in labels
+)
+print(counter_tot_labels)
+
+# Index Sampling and counter calculation
+index_list = [random.sample(range(n), int(0.2 * n)) for _ in range(draw)]
+test_indices = [indices[:] for indices in index_list]
+train_indices = [list(set(range(n)) - set(indices)) for indices in index_list]
+
+counter_attributes = {
+    split: {attr: np.zeros(draw, dtype=int) for attr in attributes}
+    for split in ["test"]
+}
+counter_labels = {
+    split: {label: np.zeros(draw, dtype=int) for label in labels} for split in ["test"]
+}
+for d in tqdm(range(draw)):
+    docs_split = {
+        "test": [df[i] for i in test_indices[d]],
+    }
+    for split in docs_split.keys():
+        for doc in docs_split[split]:
+            for ent in doc.ents:
+                for attr in attributes:
+                    if getattr(ent._, attr):
+                        counter_attributes[split][attr][d] += 1
+            for label in doc.spans.keys():
+                if label in labels:
+                    counter_labels[split][label][d] += len(doc.spans[label])
+
+
+# Normalization
+for split, ratio in {"test": 0.2}.items():
+    for attr in attributes:
+        counter_attributes[split][attr] = np.round(
+            np.abs(
+                (counter_attributes[split][attr] / counter_tot_attributes[attr]) - ratio
+            ),
+            3,
+        )
+    for label in labels:
+        counter_labels[split][label] = np.round(
+            np.abs((counter_labels[split][label] / counter_tot_labels[label]) - ratio),
+            3,
+        )
+
+# Best Index
+totals = np.zeros(draw, dtype=float)
+for split in ["test"]:
+    for d in range(draw):
+        for attr in attributes:
+            totals[d] += counter_attributes[split][attr][d]
+        for label in labels:
+            totals[d] += counter_labels[split][label][d]
+best_index = np.argmin(totals)
+
+
+# Dataset generation
+TEST = [df[i] for i in index_list[best_index][: int(len(index_list[best_index]))]]
+TRAIN = [df[i] for i in range(n) if i not in index_list[best_index]]
+
+
+print("Train size : ", len(TRAIN))
+print("Test size : ", len(TEST))
+
+brat = c.BratConnector(
+    PATH_train,
+    attributes=attributes,
+)
+brat.docs2brat(TRAIN)
+
+print("Train saved")
+
+brat = c.BratConnector(
+    PATH_test,
+    attributes=attributes,
+)
+brat.docs2brat(TEST)
+
+print("Test saved")
+```
+
+```python jupyter={"outputs_hidden": true, "source_hidden": true}
+import shutil
+
+if not os.path.exists("post_processed/expe_ner_final_v3"):
+    os.mkdir("post_processed/expe_ner_final_v3")
+
+# INPUT PATH
+PATH = "post_processed/guillaume_christel"
+
+# OUTPUT PATH
+PATH_train = "post_processed/expe_ner_final_v3/train"
+PATH_test = "post_processed/expe_ner_final_v3/test"
+if os.path.exists(PATH_train):
+    shutil.rmtree(PATH_train)
+os.mkdir(PATH_train)
+if os.path.exists(PATH_test):
+    shutil.rmtree(PATH_test)
+os.mkdir(PATH_test)
+
+# Parameters
+draw = 5000
+attributes = [
+    "Negation",
+    "Family",
+    "Temporality",
+    "Certainty",
+    "Action",
+    "Allergie",
+    "RefTemp",
+    "AttDate",
+]
+labels = [
+    "DISO",
+    "Constantes",
+    "BIO_comp",
+    "Chemical_and_drugs",
+    "dosage",
+    "BIO",
+    "strength",
+    "form",
+    "Date",
+    "Duration",
+    "Frequency",
+]
+
+brat = c.BratConnector(
+    PATH,
+    attributes=attributes,
+)
+empty = edsnlp.blank("eds")
+df = brat.brat2docs(empty)
+
+import numpy as np
+import random
+from collections import Counter
+from tqdm import tqdm
+
+
+n = len(df)
+
+# total
+counter_tot_attributes = Counter(
+    attr
+    for doc in df
+    for ent in doc.ents
+    for attr in attributes
+    if getattr(ent._, attr)
+)  # Full distribution of the attributes
+print(counter_tot_attributes)
+counter_tot_labels = Counter(
+    label
+    for doc in df
+    for label in doc.spans.keys()
+    for i in range(len(doc.spans[label]))
+    if label in labels
+)
+print(counter_tot_labels)
+
+# Index Sampling and counter calculation
+index_list = [random.sample(range(n), 20) for _ in range(draw)]
+test_indices = [indices[:] for indices in index_list]
+train_indices = [list(set(range(n)) - set(indices)) for indices in index_list]
+
+counter_attributes = {
+    split: {attr: np.zeros(draw, dtype=int) for attr in attributes}
+    for split in ["test"]
+}
+counter_labels = {
+    split: {label: np.zeros(draw, dtype=int) for label in labels} for split in ["test"]
+}
+for d in tqdm(range(draw)):
+    docs_split = {
+        "test": [df[i] for i in test_indices[d]],
+    }
+    for split in docs_split.keys():
+        for doc in docs_split[split]:
+            for ent in doc.ents:
+                for attr in attributes:
+                    if getattr(ent._, attr):
+                        counter_attributes[split][attr][d] += 1
+            for label in doc.spans.keys():
+                if label in labels:
+                    counter_labels[split][label][d] += len(doc.spans[label])
+
+
+# Normalization
+for split, ratio in {"test": 0.2}.items():
+    for attr in attributes:
+        counter_attributes[split][attr] = np.round(
+            np.abs(
+                (counter_attributes[split][attr] / counter_tot_attributes[attr]) - ratio
+            ),
+            3,
+        )
+    for label in labels:
+        counter_labels[split][label] = np.round(
+            np.abs((counter_labels[split][label] / counter_tot_labels[label]) - ratio),
+            3,
+        )
+
+# Best Index
+totals = np.zeros(draw, dtype=float)
+for split in ["test"]:
+    for d in range(draw):
+        for attr in attributes:
+            totals[d] += counter_attributes[split][attr][d]
+        for label in labels:
+            totals[d] += counter_labels[split][label][d]
+best_index = np.argmin(totals)
+
+
+# Dataset generation
+TEST = [df[i] for i in index_list[best_index][: int(len(index_list[best_index]))]]
+TRAIN = [df[i] for i in range(n) if i not in index_list[best_index]]
+
+
+print("Train size : ", len(TRAIN))
+print("Test size : ", len(TEST))
+
+brat = c.BratConnector(
+    PATH_train,
+    attributes=attributes,
+)
+brat.docs2brat(TRAIN)
+
+print("Train saved")
+
+brat = c.BratConnector(
+    PATH_test,
+    attributes=attributes,
+)
+brat.docs2brat(TEST)
+
+print("Test saved")
+```
+
+```python
+import shutil
+
+if os.path.exists("post_processed/expe_ner_final_v4"):
+    shutil.rmtree("post_processed/expe_ner_final_v4")
+os.mkdir("post_processed/expe_ner_final_v4")
+
+# INPUT PATH
+PATH = "post_processed/pre_anno_verified"
+
+# OUTPUT PATH
+PATH_train = "post_processed/expe_ner_final_v4/train"
+PATH_test = "post_processed/expe_ner_final_v4/test"
+if os.path.exists(PATH_train):
+    shutil.rmtree(PATH_train)
+os.mkdir(PATH_train)
+if os.path.exists(PATH_test):
+    shutil.rmtree(PATH_test)
+os.mkdir(PATH_test)
+
+# Parameters
+draw = 5000
+attributes = [
+    "Negation",
+    "Family",
+    "Temporality",
+    "Certainty",
+    "Action",
+    "Allergie",
+    "RefTemp",
+    "AttDate",
+]
+labels = [
+    "DISO",
+    "Constantes",
+    "BIO_comp",
+    "Chemical_and_drugs",
+    "dosage",
+    "BIO",
+    "strength",
+    "form",
+    "Date",
+    "Duration",
+    "Frequency",
+]
+
+brat = c.BratConnector(
+    PATH,
+    attributes=attributes,
+)
+empty = edsnlp.blank("eds")
+df = brat.brat2docs(empty)
+
+import numpy as np
+import random
+from collections import Counter
+from tqdm import tqdm
+
+
+n = len(df)
+
+# total
+counter_tot_attributes = Counter(
+    attr
+    for doc in df
+    for ent in doc.ents
+    for attr in attributes
+    if getattr(ent._, attr)
+)  # Full distribution of the attributes
+print(counter_tot_attributes)
+counter_tot_labels = Counter(
+    label
+    for doc in df
+    for label in doc.spans.keys()
+    for i in range(len(doc.spans[label]))
+    if label in labels
+)
+print(counter_tot_labels)
+
+# Index Sampling and counter calculation
+index_list = [random.sample(range(n), 20) for _ in range(draw)]
+test_indices = [indices[:] for indices in index_list]
+train_indices = [list(set(range(n)) - set(indices)) for indices in index_list]
+
+counter_attributes = {
+    split: {attr: np.zeros(draw, dtype=int) for attr in attributes}
+    for split in ["test"]
+}
+counter_labels = {
+    split: {label: np.zeros(draw, dtype=int) for label in labels} for split in ["test"]
+}
+for d in tqdm(range(draw)):
+    docs_split = {
+        "test": [df[i] for i in test_indices[d]],
+    }
+    for split in docs_split.keys():
+        for doc in docs_split[split]:
+            for ent in doc.ents:
+                for attr in attributes:
+                    if getattr(ent._, attr):
+                        counter_attributes[split][attr][d] += 1
+            for label in doc.spans.keys():
+                if label in labels:
+                    counter_labels[split][label][d] += len(doc.spans[label])
+
+
+# Normalization
+for split, ratio in {"test": 0.2}.items():
+    for attr in attributes:
+        counter_attributes[split][attr] = np.round(
+            np.abs(
+                (counter_attributes[split][attr] / counter_tot_attributes[attr]) - ratio
+            ),
+            3,
+        )
+    for label in labels:
+        counter_labels[split][label] = np.round(
+            np.abs((counter_labels[split][label] / counter_tot_labels[label]) - ratio),
+            3,
+        )
+
+# Best Index
+totals = np.zeros(draw, dtype=float)
+for split in ["test"]:
+    for d in range(draw):
+        for attr in attributes:
+            totals[d] += counter_attributes[split][attr][d]
+        for label in labels:
+            totals[d] += counter_labels[split][label][d]
+best_index = np.argmin(totals)
+
+
+# Dataset generation
+TEST = [df[i] for i in index_list[best_index][: int(len(index_list[best_index]))]]
+TRAIN = [df[i] for i in range(n) if i not in index_list[best_index]]
+
+
+print("Train size : ", len(TRAIN))
+print("Test size : ", len(TEST))
+
+brat = c.BratConnector(
+    PATH_train,
+    attributes=attributes,
+)
+brat.docs2brat(TRAIN)
+
+print("Train saved")
+
+brat = c.BratConnector(
+    PATH_test,
+    attributes=attributes,
+)
+brat.docs2brat(TEST)
+
+print("Test saved")
+```
+
+```python
+from biomedics.utils.extract_pandas_from_brat import extract_pandas
+
+df_ner = extract_pandas(
+    IN_BRAT_DIR=BASE_DIR / "data" / "CRH" / "pred" / "lupus_erythemateux_dissemine",
+    files_list=stays_list,
+)
+df_ner = df_ner[~df_ner.label.isin(["BIO", "BIO_comp", "Chemical_and_drugs"])]
+```
+
+```python
+from biomedics import BASE_DIR
+
+for file in os.listdir(BASE_DIR / "data" / "CRH" / "guillaume_christel_to_pred"):
+    # if file.endswith(".ann"):
+    #     os.remove(BASE_DIR / "data" / "CRH" / "guillaume_christel_to_pred" / file)
+    if file.endswith(".txt"):
+        ann_file = file[:-3] + "ann"
+        open(
+            BASE_DIR / "data" / "CRH" / "guillaume_christel_to_pred" / ann_file,
+            mode="a",
+        ).close()
 ```
 
 ```python

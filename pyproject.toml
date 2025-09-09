@@ -33,6 +33,11 @@ rich-logger = "^0.3.0"
 torch = "<2.1"
 pyspark = "^2.4.3"
 scipy = "^1.7.3"
+networkx = "^2.6.3"
+plotly = "^5.18.0"
+wordcloud = "^1.9.4"
+POT = "0.9.5"
+safetensors = "0.4.5"
 
 [tool.poetry.group.dev.dependencies]
 interrogate = "1.5.0"
@@ -85,14 +90,15 @@ extend-exclude = [
     ".venv",
     "build",
 ]
-line-length = 88
 lint.select = [
     "E",
     "F",
     "W",
     "I001"
 ]
-
+lint.ignore = [
+    "E501",
+]
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
 

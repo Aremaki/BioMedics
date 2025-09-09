@@ -55,7 +55,7 @@ def _replace_lexical_var(value):
 
     for key, regex in lexical_var_non_digit_values.items():
         val = re.sub(regex, key, str(value))
-    return val
+    return val  # type: ignore
 
 
 def _clean_value(value):
@@ -145,39 +145,14 @@ def normalize_expression(expression):
 
 
 def _convert_brat_spans(span):
-    """
-    Converts a BRAT span string into a list of start and end positions.
-
-    Args:
-        span (str): A string representing the span in the format "start ... end".
-
-    Returns:
-        list: A list containing the start and end positions as integers.
-    """
     span_match = re.compile(r"^(\d+).*\s(\d+)$").match(span)
-    span_start = int(span_match.group(1))
-    span_end = int(span_match.group(2))
+    span_start = int(span_match.group(1))  # type: ignore
+    span_end = int(span_match.group(2))  # type: ignore
     return [span_start, span_end]
 
 
 def convert_brat_to_spark(spark, brat_dir, labels):
-    """
-    Converts BRAT annotations to a Spark DataFrame.
-
-    This function reads BRAT annotation files from a specified directory,
-    filters the annotations based on the provided labels, and converts
-    the span information to a format compatible with Spark DataFrames.
-
-    Args:
-        spark (SparkSession): The Spark session object.
-        brat_dir (str): The directory containing BRAT annotation files.
-        labels (list of str): A list of labels to filter the annotations.
-
-    Returns:
-        DataFrame: A Spark DataFrame containing the filtered and converted
-        annotations with columns: 'term', 'lexical_variant', 'source',
-        'span_start', 'span_end', and 'label'.
-    """
+    # Convert span to list with span_start, span_end. It considers the new lines by adding one character.
     df = extract_pandas(IN_BRAT_DIR=brat_dir)
     df = df.loc[df["label"].isin(labels)]
     df["span_converted"] = df["span"].apply(_convert_brat_spans)
@@ -191,8 +166,7 @@ def convert_brat_to_spark(spark, brat_dir, labels):
 
 def match_bio_to_biocomp(df_bio, df_biocomp):
     """
-    Match bio to biocomp entities retrieved from the EDS-Biomedic model
-    and clean the lexical variants for pollution
+    Match bio to biocomp entities retrieved from the EDS-Biomedic model and clean the lexical variants for pollution
 
     """
     df_biocomp = df_biocomp.withColumnRenamed(
@@ -242,8 +216,7 @@ def match_bio_to_biocomp(df_bio, df_biocomp):
 def match_date_pattern(df):
     """
     Return date if identified in the lexical_variant.
-    If a date format is identified it is assigned to a new column `extracted_date` and
-    remove the date in the lexical_variant
+    If a date format is identified it is assigned to a new column `extracted_date` and remove the date in the lexical_variant
     """
     date_pattern = (
         r"(\d{2}/20\d{2}|\d{2}/\d{2}|20\d{2}-\d{2}-\d{2}|20\d{2}-\d{2}|20\d{2})"
@@ -264,35 +237,26 @@ def match_date_pattern(df):
 def extract_clean_range_value(df):
     """
     Return range value if identified in the lexical_variant.
-    If a range value format is identified it is assigned to a new column `range_value`
-    and removed in the lexical_variant
+    If a range value format is identified it is assigned to a new column `range_value` and removed in the lexical_variant
     """
 
-    pattern_range_value = (
-        r"([|¦][<>]\d+[\.,]?\d*$|"
-        r"\(\s?[nN]?\s?:?\s?[<>]\s?\d+[\.\,]?\d*\s?\)?|"
-        r"\(?\s?[nN]?\s?[:=]?\s?\d+[\.,]?\d*\s?[\-–]\s?\d+[\.,]?\d*\s?\)?)"
-    )
-
+    pattern_range_value = r"([|¦][<>]\d+[\.,]?\d*$|\(\s?[nN]?\s?:?\s?[<>]\s?\d+[\.\,]?\d*\s?\)?|\(?\s?[nN]?\s?[:=]?\s?\d+[\.,]?\d*\s?[\-–]\s?\d+[\.,]?\d*\s?\)?)"
     df_range_val = df.withColumn(
         "range_value",
-        F.regexp_extract(F.col("lexical_variant_stripped"), pattern_range_value, 1),
+        F.regexp_extract(F.col("lexical_variant_stripped"), pattern_range_value, 1),  # type: ignore
     )
 
     df_range_val = df_range_val.withColumn(
         "lexical_variant_stripped",
         F.regexp_replace("lexical_variant_stripped", pattern_range_value, " "),
     )
-
     df_range_val = df_range_val.withColumn(
         "range_value", F.regexp_replace("range_value", r"[^\d><\-–\.,]", "")
     )
-
     df_range_val = df_range_val.withColumn(
         "range_value",
-        F.when(F.col("range_value") == "", None).otherwise(F.col("range_value")),
+        F.when(F.col("range_value") == "", None).otherwise(F.col("range_value")),  # type: ignore
     )
-
     return df_range_val
 
 
@@ -317,7 +281,9 @@ def clean_lexical_variant(df):
     df = df.withColumn(
         "lexical_variant_stripped",
         F.translate(
-            F.lower(F.col("lexical_variant_stripped")), "⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789"
+            F.lower(F.col("lexical_variant_stripped")),  # type: ignore
+            "⁰¹²³⁴⁵⁶⁷⁸⁹",
+            "0123456789",
         ),
     )
     df = df.withColumn(
@@ -331,7 +297,7 @@ def clean_lexical_variant(df):
     df = df.withColumn(
         "lexical_variant_stripped",
         F.translate(
-            F.lower(F.col("lexical_variant_stripped")),
+            F.lower(F.col("lexical_variant_stripped")),  # type: ignore
             "ãäöüáàäčçďéêěèïíîĺľňóôŕšťúûůýž",
             "aaouaaaccdeeeeiiillnoorstuuuyz",
         ),
@@ -349,22 +315,21 @@ def clean_lexical_variant(df):
 def extract_clean_non_digit_value(df):
     """
     Return non digit value if identified in the lexical_variant.
-    If a non digit value format is identified it is assigned to a new column
-    `non_digit_value` and removed in the lexical_variant
+    If a non digit value format is identified it is assigned to a new column `non_digit_value` and removed in the lexical_variant
     """
 
     replace_lexical_var_udf = F.udf(_replace_lexical_var, StringType())
 
     df = df.withColumn(
         "lexical_variant_stripped",
-        replace_lexical_var_udf(F.col("lexical_variant_stripped")),
+        replace_lexical_var_udf(F.col("lexical_variant_stripped")),  # type: ignore
     )
 
     pattern_non_digit_val = "|".join(lexical_var_non_digit_values.values())
 
     df_non_digit_val = df.withColumn(
         "non_digit_value",
-        F.regexp_extract(F.col("lexical_variant_stripped"), pattern_non_digit_val, 0),
+        F.regexp_extract(F.col("lexical_variant_stripped"), pattern_non_digit_val, 0),  # type: ignore
     )
     df_non_digit_val = df_non_digit_val.withColumn(
         "non_digit_value", F.regexp_replace("non_digit_value", r"[^\w+-]", "")
@@ -376,8 +341,8 @@ def extract_clean_non_digit_value(df):
 
     df_non_digit_val = df_non_digit_val.withColumn(
         "non_digit_value",
-        F.when(F.col("non_digit_value") == "", None).otherwise(
-            F.col("non_digit_value")
+        F.when(F.col("non_digit_value") == "", None).otherwise(  # type: ignore
+            F.col("non_digit_value")  # type: ignore
         ),
     )
     return df_non_digit_val
@@ -386,8 +351,7 @@ def extract_clean_non_digit_value(df):
 def extract_clean_units(df):
     """
     Return unit if identified in the lexical_variant.
-    If a unit format is identified it is assigned to a new column `unit`
-    and removed in the lexical_variant
+    If a unit format is identified it is assigned to a new column `unit` and removed in the lexical_variant
     """
     clean_units_udf = F.udf(_clean_unit, StringType())
     df = df.withColumn(
@@ -401,17 +365,7 @@ def extract_clean_units(df):
         F.regexp_replace("lexical_variant_stripped", pattern_10E, r"$1 $2"),
     )
 
-    pattern_digit_nospace_wt_unit = (
-        r"(?i)(\d+)"
-        r"(g?\/mm3|ml\s?\/\s?mi?n\s?\/\s?m2|ml\s?\/\s?mi?n\s?\/\s?1[.,]73\s?m2|"
-        r"ml\s?\/\s?mi?n|µ?m?n?p?g\/24h|µ?u?m?n?p?g\s?\/\s?d?m?l|m?mol/24h|"
-        r"seco?n?d?e?s?|minu?t?e?s?|µ?u?m?n?p?g\s?\/\s?mmol?|µ?u?m?n?p?mol\s?\/\s?"
-        r"[a-z0-9µ]+|µ?u?m?n?p?g\s?\/\s?\w+?|mm\s?h\s?g\.?|µ?u?m?n?p?mol|\%|fl\b|"
-        r"mgy\.cm|gigas?\s*\/?\w+?|µ?u?m?n?p?g\b|\/?mm\b|gl\b|mil?li\s*grammes?|"
-        r"grammes?\s*\/?\s*\w*|micro\s*mol\/?\w*|\/?p?g?ml|m?osmol\/?\w*|molaires?|"
-        r"u\s*\/\s*l|m?ui\s*\/\s*m?l|k?pa\b|[a-zA-Zµ]+\/\w+|µ?u?m?n?m\b|[|¦]µ?u?m?n?s\b|"
-        r"\/[a-zA-Zµ]+\b)"
-    )
+    pattern_digit_nospace_wt_unit = r"(?i)(\d+)(g?\/mm3|ml\s?\/\s?mi?n\s?\/\s?m2|ml\s?\/\s?mi?n\s?\/\s?1[.,]73\s?m2|ml\s?\/\s?mi?n|µ?m?n?p?g\/24h|µ?u?m?n?p?g\s?\/\s?d?m?l|m?mol/24h|seco?n?d?e?s?|minu?t?e?s?|µ?u?m?n?p?g\s?\/\s?mmol?|µ?u?m?n?p?mol\s?\/\s?[a-z0-9µ]+|µ?u?m?n?p?g\s?\/\s?\w+?|mm\s?h\s?g\.?|µ?u?m?n?p?mol|\%|fl\b|mgy\.cm|gigas?\s*\/?\w+?|µ?u?m?n?p?g\b|\/?mm\b|gl\b|mil?li\s*grammes?|grammes?\s*\/?\s*\w*|micro\s*mol\/?\w*|\/?p?g?ml|m?osmol\/?\w*|molaires?|u\s*\/\s*l|m?ui\s*\/\s*m?l|k?pa\b|[a-zA-Zµ]+\/\w+|µ?u?m?n?m\b|[|¦]µ?u?m?n?s\b|\/[a-zA-Zµ]+\b)"
 
     df = df.withColumn(
         "lexical_variant_stripped",
@@ -420,17 +374,7 @@ def extract_clean_units(df):
         ),
     )
 
-    units = (
-        r"(?i)(x?10\*\d+\s?\/[a-z]{1,2}|g?\/mm3|ml\s?\/\s?mi?n\s?\/\s?m2|"
-        r"ml\s?\/\s?mi?n\s?\/\s?1[.,]73\s?m2|ml\s?\/\s?mi?n|μ?µ?m?n?p?g\/24h|"
-        r"µ?u?m?n?p?g\s?\/\s?d?m?l|m?mol/24h|seco?n?d?e?s?|\bminu?t?e?s?|"
-        r"µ?u?m?n?p?g\s?\/\s?mmol?|μ?µ?u?m?n?p?mol\s?\/\s?[a-z0-9µμ]+|"
-        r"μ?µ?u?m?n?p?g\s?\/\s?\w+|mm\s?h\s?g\.?|μ?µ?u?m?n?p?mol|\%|\bfl\b|"
-        r"mgy\.cm|gigas?\s*\/?\w+|\bμ?µ?u?m?n?p?g\b|\/?mm\b|gl\b|mil?li\s*grammes?|"
-        r"grammes?\s*\/?\s*\w*|micro\s*mol\/?\w*|\/?p?g?ml|m?osmol\/?\w*|molaires?|"
-        r"u\s*\/\s*l|m?ui\s*\/\s*m?l|\bk?pa\b|[a-zA-Zµμμ]+\/\w+|\bµ?u?m?n?m\b|"
-        r"[|¦]μ?µ?u?m?n?s\b|[\s|¦]\/[a-zA-Zµμ]+\b)"
-    )
+    units = r"(?i)(x?10\*\d+\s?\/[a-z]{1,2}|g?\/mm3|ml\s?\/\s?mi?n\s?\/\s?m2|ml\s?\/\s?mi?n\s?\/\s?1[.,]73\s?m2|ml\s?\/\s?mi?n|μ?µ?m?n?p?g\/24h|µ?u?m?n?p?g\s?\/\s?d?m?l|m?mol/24h|seco?n?d?e?s?|\bminu?t?e?s?|µ?u?m?n?p?g\s?\/\s?mmol?|μ?µ?u?m?n?p?mol\s?\/\s?[a-z0-9µμ]+|μ?µ?u?m?n?p?g\s?\/\s?\w+|mm\s?h\s?g\.?|μ?µ?u?m?n?p?mol|\%|\bfl\b|mgy\.cm|gigas?\s*\/?\w+|\bμ?µ?u?m?n?p?g\b|\/?mm\b|gl\b|mil?li\s*grammes?|grammes?\s*\/?\s*\w*|micro\s*mol\/?\w*|\/?p?g?ml|m?osmol\/?\w*|molaires?|u\s*\/\s*l|m?ui\s*\/\s*m?l|\bk?pa\b|[a-zA-Zµμμ]+\/\w+|\bµ?u?m?n?m\b|[|¦]μ?µ?u?m?n?s\b|[\s|¦]\/[a-zA-Zµμ]+\b)"
 
     df_units = df.withColumn(
         "unit", F.regexp_extract("lexical_variant_stripped", units, 1)
@@ -446,7 +390,7 @@ def extract_clean_units(df):
 
     df_units = df_units.withColumn(
         "unit",
-        F.when(F.col("unit") == "", None).otherwise(F.col("unit")),
+        F.when(F.col("unit") == "", None).otherwise(F.col("unit")),  # type: ignore
     )
 
     return df_units
@@ -455,8 +399,7 @@ def extract_clean_units(df):
 def extract_clean_values(df):
     """
     Return value if identified in the lexical_variant.
-    If a value format is identified it is assigned to a new column `value`
-    and removed in the lexical_variant
+    If a value format is identified it is assigned to a new column `value` and removed in the lexical_variant
     Value is then cleaned and assigned to a new column `value_cleaned`
     """
 
@@ -480,7 +423,7 @@ def extract_clean_values(df):
 
     df_values = df_values.withColumn(
         "value_cleaned",
-        F.when(F.col("value_cleaned") == "", None).otherwise(F.col("value_cleaned")),
+        F.when(F.col("value_cleaned") == "", None).otherwise(F.col("value_cleaned")),  # type: ignore
     )
 
     return df_values
@@ -489,15 +432,11 @@ def extract_clean_values(df):
 def extract_fluids_source(df):
     """
     Return fluid source the bio was measured in if identified in the lexical_variant.
-    If a fluid format is identified it is assigned to a new column `fluid_source`
-    and removed in the lexical_variant.
-    The fluid terms are normalized using fuzzy
+    If a fluid format is identified it is assigned to a new column `fluid_source` and removed in the lexical_variant
+    The fluid terms are normalised usign fuzzy matching using the reference dictionnary fluide_source
     """
 
-    pattern_fluids = (
-        r"(?i)(sang\w*|urine\w*|serique\w*|plasma\w*|foetal\w*|capill?air\w*|serum|"
-        r"urinaire\w*|\bur\b|selle\w*|vessie|veineux|veineuse|\blcr\b)"
-    )
+    pattern_fluids = r"(?i)(sang\w*|urine\w*|serique\w*|plasma\w*|foetal\w*|capill?air\w*|serum|urinaire\w*|\bur\b|selle\w*|vessie|veineux|veineuse|\blcr\b)"
 
     df_fluids = df.withColumn(
         "fluid_source", F.regexp_extract("lexical_variant", pattern_fluids, 1)
@@ -513,12 +452,10 @@ def extract_fluids_source(df):
 def extract_clean_subsequent_lex_var(df):
     """
     Return subsequent lexical variant after removing all the previous entities.
-    Lexical variant is normalized using fuzzy matching and lexical variant dictionary
-    bios_lexical_variant_fuzzy_dict. If the similarity score is higher than the
-    threshold, the lexical variant term associated is returned in the column
-    `lexical_variant_term`, the associated key in the column `lexical_variant_key`,
-    and the similarity score in the column `max_fuzzy_score`. If the max similarity
-    score is not higher than the threshold, then it returns the initial term.
+    lexical variant is normalised using fuzzy matching and lexical variant dictionnary bios_lexical_variant_fuzzy_dict
+    if the similarity score is higher then threshold the lexical variant term associated is returned in the column `lexical_variant_term`, the associated key
+    in the column `lexical_variant_key` and the similarity score in the column `max_fuzzy_score`
+    If the the max similarity score is not higher then the threshold then it returns the initial term
     """
 
     pattern_sub_lexical_var = r"(?i)(\b[A-Za-z]+(\.[A-Za-z]+)*\b)"
@@ -526,10 +463,13 @@ def extract_clean_subsequent_lex_var(df):
     df_subs_lex_var = df.withColumn(
         "lexical_variant",
         F.when(
-            F.col("lexical_variant_bio") != "", F.col("lexical_variant_bio")
+            F.col("lexical_variant_bio") != "",  # type: ignore
+            F.col("lexical_variant_bio"),  # type: ignore
         ).otherwise(
             F.regexp_extract(
-                F.col("lexical_variant_stripped"), pattern_sub_lexical_var, 1
+                F.col("lexical_variant_stripped"),  # type: ignore
+                pattern_sub_lexical_var,
+                1,
             )
         ),
     )
@@ -537,7 +477,7 @@ def extract_clean_subsequent_lex_var(df):
     df_subs_lex_var = df_subs_lex_var.withColumn(
         "lexical_variant",
         F.translate(
-            F.lower(F.col("lexical_variant")),
+            F.lower(F.col("lexical_variant")),  # type: ignore
             "ãäöüáàäčçďéêěèïíîĺľňóôŕšťúûůýž",
             "aaouaaaccdeeeeiiillnoorstuuuyz",
         ),
@@ -555,10 +495,12 @@ def extract_clean_subsequent_lex_var(df):
         "lexical_variant", F.regexp_replace("lexical_variant", "[<>-]", " ")
     )
     df_subs_lex_var = df_subs_lex_var.withColumn(
-        "lexical_variant", F.ltrim(df_subs_lex_var["lexical_variant"])
+        "lexical_variant",
+        F.ltrim(df_subs_lex_var["lexical_variant"]),  # type: ignore
     )
     df_subs_lex_var = df_subs_lex_var.withColumn(
-        "lexical_variant", F.rtrim(df_subs_lex_var["lexical_variant"])
+        "lexical_variant",
+        F.rtrim(df_subs_lex_var["lexical_variant"]),  # type: ignore
     )
 
     df_subs_lex_var_after_removal_fluid_source = extract_fluids_source(df_subs_lex_var)
@@ -576,8 +518,8 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     all_labels = [label_key] + labels_to_remove
 
     df_ents_sparks = convert_brat_to_spark(spark, brat_dir, all_labels)
-    df_ents_bio_comp = df_ents_sparks.filter(F.col("label") == label_key)
-    df_ents_bio = df_ents_sparks.filter(F.col("label").isin(labels_to_remove))
+    df_ents_bio_comp = df_ents_sparks.filter(F.col("label") == label_key)  # type: ignore
+    df_ents_bio = df_ents_sparks.filter(F.col("label").isin(labels_to_remove))  # type: ignore
     end_t1 = time.time()
 
     logger.info(
@@ -594,8 +536,7 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     end_t2 = time.time()
 
     logger.info(
-        f"Biocomp linked with bio table len:  {df_biocomp_bio.count()} entities "
-        f"\nprocessed in {round(end_t2 - start_t2,3)} secs"
+        f"Biocomp linked with bio table len:  {df_biocomp_bio.count()} entities \nprocessed in {round(end_t2 - start_t2,3)} secs"
     )
 
     logger.info("-------------Remove bio from bio_comp-------------")
@@ -655,10 +596,8 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     logger.info(f"processed in {round(end_t11 - start_t11,3)} secs")
 
     logger.info(
-        f"DataFrame shape after processing: {df_biocomp_bio_clean.count()}\n"
-        f"Number of unique note_id in the initial df: "
-        f"{df_biocomp_bio.select('source').distinct().count()}, "
-        f"after processing: {df_biocomp_bio_clean.select('source').distinct().count()}"
+        f"Dataframe shape after processing: {df_biocomp_bio_clean.count()}\
+    \nNumber of unique note_id in the initial df : {df_biocomp_bio.select('source').distinct().count()}, after processing: {df_biocomp_bio_clean.select('source').distinct().count()}"
     )
 
     logger.info(
