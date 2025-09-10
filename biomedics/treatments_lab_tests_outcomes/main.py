@@ -91,7 +91,7 @@ def compute_save_treatments_lab_tests_outcomes(sql, config):
         patient_nlp_bio["negative_text"] = patient_nlp_bio.negative_text.where(
             patient_nlp_bio["negative_text"], None
         )
-        patient_nlp_bio[
+        patient_nlp_bio = patient_nlp_bio[
             ~patient_nlp_bio.positive_text.isna()
             | ~patient_nlp_bio.negative_text.isna()
             | patient_nlp_bio.positive_value.isna()
