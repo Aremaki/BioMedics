@@ -26,7 +26,9 @@ from biomedics.patient_similarity.utils import (
 warnings.filterwarnings("ignore")
 
 
-def process_and_sort_CRH_similarity(medical_text, selected_specialties, cohort_idx):
+def process_and_sort_CRH_similarity(
+    medical_text, selected_specialties, cohort_idx, cim10_codes
+):
     """
     Processes a medical text to find similar patients.
     """
@@ -84,6 +86,27 @@ def process_and_sort_CRH_similarity(medical_text, selected_specialties, cohort_i
     target_patients = pd.read_pickle(f"{output_folder}/pred_with_classified_diso.pkl")
     target_patients.labels = target_patients.labels.str.split(r" \| ")
     target_patients = target_patients.explode("labels")
+    outcomes = pd.read_pickle(f"{output_folder}/outcomes.pkl")
+    # compute a df for each source the number of icd10_codes starting with the cim_codes input
+    cim10_codes = [code.split(" : ")[0].replace(".", "") for code in cim10_codes]
+    outcomes["matched_icd10_codes"] = outcomes["icd10_codes"].apply(
+        lambda codes: [
+            code
+            for code in codes
+            if any(code.startswith(cim_code) for cim_code in cim10_codes)
+        ]
+    )
+    outcomes["num_icd10_match"] = outcomes["matched_icd10_codes"].apply(len)
+    outcomes["target_icd10_codes"] = [cim10_codes] * len(outcomes)
+    icd10_match = outcomes[
+        [
+            "source",
+            "matched_icd10_codes",
+            "num_icd10_match",
+            "icd10_codes",
+            "target_icd10_codes",
+        ]
+    ]
 
     # Run NLP model
     doc = nlp(medical_text)
@@ -115,15 +138,20 @@ def process_and_sort_CRH_similarity(medical_text, selected_specialties, cohort_i
         new_embeddings["normalized_term"] = new_terms
         df_embed = pd.concat([df_embed, new_embeddings])
 
-    distances = compute_distance(
+    distances_embedding = compute_distance(
         source_patient,
         target_patients,
         df_embed,
         vectorizer,
         selected_specialties,
     )
+    # Add a column with rank value
+    distances_embedding = distances_embedding.sort_values(
+        by="similarity_distance", ascending=False
+    )
+    distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
 
-    return distances
+    return distances_embedding, icd10_match
 
 
 def main():
@@ -142,18 +170,13 @@ def main():
             clinical_text, cim10_codes, specialties = parse_clinical_case(case_file)
 
             if clinical_text:
-                distances = process_and_sort_CRH_similarity(
-                    clinical_text, specialties, cohort_idx
-                )
-
-                # Add CIM-10 codes as a list to distances if available
-                if cim10_codes and distances is not None:
-                    distances["CIM-10_Codes"] = [cim10_codes] * len(distances)
-                # save distances
-                distances.to_pickle(f"{cohort_dir}/distances_{case_file.stem}.pkl")  # type: ignore
-
-                print(f"    CIM-10 Codes: {cim10_codes}")
-                print("-" * 20)
+                distances_embedding, icd10_match = process_and_sort_CRH_similarity(
+                    clinical_text, specialties, cohort_idx, cim10_codes
+                )  # type: ignore
+                distances_embedding.to_pickle(
+                    f"{cohort_dir}/distances_{case_file.stem}.pkl"
+                )  # type: ignore
+                icd10_match.to_pickle(f"{cohort_dir}/icd10_match_{case_file.stem}.pkl")
 
 
 if __name__ == "__main__":
