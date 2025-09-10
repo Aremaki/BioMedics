@@ -1,4 +1,5 @@
 import typer
+from loguru import logger
 
 from biomedics import BASE_DIR
 from biomedics.patient_similarity.main import process_and_sort_CRH_similarity
@@ -17,10 +18,10 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
 
     for cohort_dir in cohort_dirs:
         cohort_idx = int(cohort_dir.name.split("_")[0])
-        print(f"Processing cohort: {cohort_dir.name}")
+        logger.info(f"Processing cohort: {cohort_dir.name}")
 
         for case_file in cohort_dir.glob("*.txt"):
-            print(f"  Processing file: {case_file.name}")
+            logger.info(f"Processing file: {case_file.name}")
             clinical_text, cim10_codes, specialties = parse_clinical_case(case_file)
 
             if clinical_text:

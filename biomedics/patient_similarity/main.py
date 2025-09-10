@@ -91,7 +91,9 @@ def process_and_sort_CRH_similarity(
     target_patients = target_patients.explode("labels")
     outcomes = pd.read_pickle(f"{output_folder}/outcomes.pkl")
     # compute a df for each source the number of icd10_codes starting with the cim_codes input
-    cim10_codes = [code.split(" : ")[0].replace(".", "") for code in cim10_codes]
+    cim10_codes = [
+        "CIM10:" + code.split(" : ")[0].replace(".", "") for code in cim10_codes
+    ]
     outcomes["matched_icd10_codes"] = outcomes["icd10_codes"].apply(
         lambda codes: [
             code
