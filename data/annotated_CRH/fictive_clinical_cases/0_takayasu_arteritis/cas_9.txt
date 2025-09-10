@@ -1,0 +1,59 @@
+Motif d’hospitalisation
+
+Fièvre prolongée et amaigrissement inexpliqué.
+
+Mode de vie
+
+Femme de 23 ans, étudiante, non fumeuse, pas d’alcool.
+
+Antécédents médicaux
+
+Aucun.
+
+Traitements habituels
+
+Aucun.
+
+Histoire de la maladie
+
+Depuis 2 mois : asthénie marquée, fièvre prolongée autour de 38,5 °C, perte de poids de 5 kg, myalgies diffuses. Pas de symptômes respiratoires ni digestifs.
+
+Examen clinique
+
+TA 115/70 mmHg, FC 92/min, T° 38,2 °C.
+
+Souffle systolique discret au niveau de la sous-clavière gauche.
+
+Pouls périphériques présents, symétriques.
+
+Pas d’adénopathie ni d’hépatosplénomégalie.
+
+Examens complémentaires
+
+NFS : Hb 11,2 g/dL, leucocytes 9,5 G/L, plaquettes 420 G/L.
+
+CRP : 78 mg/L, VS : 95 mm/h.
+
+Sérologies infectieuses négatives.
+
+Échographie Doppler des troncs supra-aortiques : épaississement pariétal diffus de l’artère sous-clavière gauche.
+
+Angio-IRM aortique : épaississement circonférentiel de l’aorte thoracique descendante.
+
+Évolution
+
+Diagnostic de Takayasu phase inflammatoire. Mise sous corticothérapie 1 mg/kg/j → amélioration rapide de la fièvre et de la CRP.
+
+Conclusion
+
+Maladie de Takayasu, phase systémique inaugurale avec atteinte de l’aorte thoracique descendante.
+
+-----Codes CIM-10-----
+
+M31.4 : Artérite de Takayasu .
+
+R50.9 : Fièvre, sans précision.
+
+---Axes---
+Cardiovasculaires
+Etatsosy

@@ -1,0 +1,54 @@
+Motif d’hospitalisation
+
+Claudication du membre supérieur gauche.
+
+Mode de vie
+
+Femme de 31 ans, professeure, non fumeuse.
+
+Antécédents médicaux
+
+Aucun antécédent médical connu.
+
+Traitements habituels
+
+Aucun.
+
+Histoire de la maladie
+
+Depuis 6 mois : fatigabilité et douleurs du bras gauche à l’effort. Depuis 2 semaines : aggravation, bras gauche froid, engourdi après quelques minutes d’effort.
+
+Examen clinique
+
+TA : 125/80 mmHg au bras droit, 80/60 mmHg au bras gauche.
+
+Asymétrie des pouls : pouls radial gauche aboli, droit conservé.
+
+Souffle vasculaire axillaire gauche.
+
+Examen neurologique normal.
+
+Examens complémentaires
+
+CRP : 12 mg/L.
+
+Écho-Doppler : sténose serrée de l’artère sous-clavière gauche.
+
+Angio-IRM : sténose critique sous-clavière gauche, épaississement aortique modéré.
+
+Évolution
+
+Mise sous corticothérapie associée à méthotrexate. Discussion d’un geste de revascularisation différé après stabilisation de l’inflammation.
+
+Conclusion
+
+Takayasu évolutif avec sténose serrée de la sous-clavière gauche responsable d’une claudication sévère.
+
+-----Codes CIM-10-----
+
+M31.4 : Artérite de Takayasu.
+
+I70.8 : Autres formes d’athérosclérose.
+
+---Axes---
+Cardiovasculaires

@@ -1,0 +1,62 @@
+Motif d’hospitalisation
+
+Déficit moteur brutal du bras droit.
+
+Mode de vie
+
+Femme de 34 ans, architecte, non fumeuse, pas d’alcool.
+
+Antécédents médicaux
+
+Lupus érythémateux disséminé (diagnostiqué 2 ans plus tôt).
+
+Pas d’HTA, pas de diabète.
+
+Traitements habituels
+
+Hydroxychloroquine 400 mg/j, prednisone 7,5 mg/j.
+
+Histoire de la maladie
+
+Début brutal il y a 2 h d’une faiblesse du bras droit avec troubles de la parole.
+
+Examen clinique
+
+TA 120/70 mmHg, FC 85/min, T° 36,9 °C.
+
+Déficit moteur 3/5 du membre supérieur droit, dysarthrie.
+
+NIHSS : 7.
+
+Examens complémentaires
+
+Scanner cérébral initial : pas d’hémorragie.
+
+IRM cérébrale : infarctus sylvien gauche.
+
+Angio-IRM : sténose distale de l’ACI gauche.
+
+Bilan SAPL : anticoagulant lupique + anti cardiolipines IgG fortement positifs (confirmés à 12 semaines).
+
+NFS : Hb 12,4 g/dL, plaquettes 95 G/L.
+
+Évolution
+
+Thrombolyse IV non indiquée (retard > 4h30). Mise sous anticoagulation par AVK au long cours (INR cible 2,5–3). Rééducation motrice et orthophonique.
+
+Conclusion
+
+Syndrome des antiphospholipides secondaire à un LED, compliqué d’AVC ischémique sylvien gauche.
+
+-----Codes CIM-10-----
+
+D68.6 : Autres thrombophilies (SAPL).
+
+I63.5 : Infarctus cérébral dû à une occlusion d’artère cérébrale.
+
+M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes.
+
+---Axes---
+Immunitaire
+Cardiovasculaires
+Nerveux
