@@ -47,6 +47,7 @@ _build/
 # Data
 *.csv
 *.pickle
+*.pkl
 *.txt
 *.xls
 *.xlsx
