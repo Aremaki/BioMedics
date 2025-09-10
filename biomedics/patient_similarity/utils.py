@@ -68,7 +68,7 @@ def add_atc_code(doc, drug_df, text_preprocessor):
     return doc
 
 
-def add_label_class(doc, model, tokenizer, text_preprocessor, label_names):
+def add_label_class(doc, model, tokenizer, text_preprocessor, label_names, device):
     predicted_entities = [
         text_preprocessor(
             text=ent.text, remove_stopwords=True, remove_special_characters=True
@@ -84,10 +84,13 @@ def add_label_class(doc, model, tokenizer, text_preprocessor, label_names):
             truncation=True,
             max_length=512,
         )
+        # Ensure inputs are on the same device as the model
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             outputs = model(**inputs)
         logits = outputs.logits
-        probs = torch.sigmoid(logits)
+        # Move to CPU for safe Python-side iteration and comparisons
+        probs = torch.sigmoid(logits).detach().cpu()
 
         ents = []
         ents_diso = []

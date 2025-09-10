@@ -37,17 +37,17 @@ def process_and_sort_CRH_similarity(
     """
     config_path = BASE_DIR / "configs" / "end2end" / config_name
     config = Config().from_disk(config_path, interpolate=True)
-
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     stopwords = config["emdedding_similarity"]["stopwords"]
     text_preprocessor = TextPreprocessor(cased=False, stopwords=stopwords)
     embedding_normalizer = EmbeddingNormalizer(
         model_name_or_path=config["emdedding_similarity"]["model_path"],
         tokenizer_name_or_path=config["emdedding_similarity"]["model_path"],
-        device="cuda",
+        device=device,
     )
 
     # Load NER model
-    nlp = edsnlp.load(config["infer"]["model_path"]).to("cuda")
+    nlp = edsnlp.load(config["infer"]["model_path"]).to(device)
 
     # Normalization data
     drug_dict = pd.read_pickle(config["fuzzy_matching"]["drug_dict_path"])
@@ -76,7 +76,7 @@ def process_and_sort_CRH_similarity(
     num_labels = len(label_names)
     model = CamembertForSequenceClassification.from_pretrained(
         classif_model_path, num_labels=num_labels
-    ).to("cuda")  # type: ignore
+    ).to(device)  # type: ignore
     tokenizer = CamembertTokenizer.from_pretrained(classif_model_path)
 
     # Vectorizer for patient distance
@@ -114,7 +114,7 @@ def process_and_sort_CRH_similarity(
     # Run NLP model
     doc = nlp(medical_text)
     doc = add_atc_code(doc, drug_df, text_preprocessor)
-    doc = add_label_class(doc, model, tokenizer, text_preprocessor, label_names)
+    doc = add_label_class(doc, model, tokenizer, text_preprocessor, label_names, device)
 
     source_patient = create_source_terms(doc, selected_specialties, text_preprocessor)
     if not source_patient or not selected_specialties:
