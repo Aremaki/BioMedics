@@ -114,7 +114,7 @@ class FuzzyNormaliser:
             )
         if self.method == "lev":
             df_1 = self.df.copy()
-            self.drug_dict.copy()
+            df_2 = self.drug_dict.copy()  # noqa: F841
             merged_df = duckdb.query(
                 f"""select *, levenshtein(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score < {threshold}"""
             ).to_df()
@@ -136,7 +136,7 @@ class FuzzyNormaliser:
             self.df = merged_df
         if self.method == "jaro_winkler":
             df_1 = self.df.copy()
-            self.drug_dict.copy()
+            df_2 = self.drug_dict.copy()  # noqa: F841
             merged_df = duckdb.query(
                 f"""select *, jaro_winkler_similarity(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score > {threshold}"""
             ).to_df()

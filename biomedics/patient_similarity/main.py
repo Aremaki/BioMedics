@@ -148,7 +148,7 @@ def main():
 
                 # Add CIM-10 codes as a list to distances if available
                 if cim10_codes and distances is not None:
-                    distances["CIM-10_Codes"] = cim10_codes * len(distances)
+                    distances["CIM-10_Codes"] = [cim10_codes] * len(distances)
                 # save distances
                 distances.to_pickle(f"{cohort_dir}/distances_{case_file.stem}.pkl")  # type: ignore
 

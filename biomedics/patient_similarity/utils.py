@@ -34,12 +34,13 @@ def add_atc_code(doc, drug_df, text_preprocessor):
         if ent.label_ == "Chemical_and_drugs"
     ]
     if predicted_entities:
-        pd.DataFrame(
+        df_1 = pd.DataFrame(  # noqa: F841
             {
                 "term": [ent.text for ent in doc.spans["Chemical_and_drugs"]],
                 "term_to_norm": predicted_entities,
             }
         )
+        df_2 = drug_df  # noqa: F841
         threshold = 0.8
         merged_df = duckdb.query(
             f"""select *, jaro_winkler_similarity(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score > {threshold}"""
@@ -202,7 +203,9 @@ def compute_distance(
             distances[source] = distance / len(selected_labels)
 
     # convert to pandas dataframe
-    distances = pd.DataFrame(distances.items(), columns=["note_id", "distance"])
+    distances = pd.DataFrame(
+        distances.items(), columns=["source", "similarity_distance"]
+    )
 
     return distances
 
