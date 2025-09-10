@@ -52,7 +52,6 @@ D68.6 : Autres thrombophilies (SAPL).
 
 I80.2 : Phlébite et thrombophlébite des autres veines profondes des MI.
 
-
---Axes--
+---Axes---
 Immunitaire
 Cardiovasculaires

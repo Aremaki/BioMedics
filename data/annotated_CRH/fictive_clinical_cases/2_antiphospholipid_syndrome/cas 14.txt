@@ -56,9 +56,7 @@ I63.5 : Infarctus cérébral dû à une occlusion d’artère cérébrale.
 
 M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes.
 
-
-
---Axes--
+---Axes---
 Immunitaire
 Cardiovasculaires
 Nerveux

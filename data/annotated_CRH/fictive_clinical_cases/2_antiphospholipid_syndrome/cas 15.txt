@@ -48,7 +48,6 @@ D68.6 : Autres thrombophilies (SAPL).
 
 O36.4 : Mort fœtale intra-utérine.
 
-
---Axes--
+---Axes---
 Immunitaire
 Urogen

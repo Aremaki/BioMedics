@@ -58,8 +58,7 @@ I67.4 : Crise hypertensive rénale.
 
 D59.3 : Anémie hémolytique microangiopathique
 
-
---Axes--
+---Axes---
 Immunitaire
 Urogen
 Cardiovasculaires

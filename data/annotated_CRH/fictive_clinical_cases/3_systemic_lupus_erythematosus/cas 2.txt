@@ -68,7 +68,6 @@ N08.5 : Glomérulopathie dans les maladies systémiques.
 
 D72.8 : Autres anomalies précisées des leucocytes (lymphopénie).
 
-
---Axes--
+---Axes---
 Immunitaire
 Urogen

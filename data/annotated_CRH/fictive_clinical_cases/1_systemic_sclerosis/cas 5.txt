@@ -63,7 +63,6 @@ J84.1 : Autres maladies pulmonaires interstitielles spécifiques.
 
 I73.0 : Maladie de Raynaud.
 
-
 ---Axes---
 Immunitaire
 Respiratoire

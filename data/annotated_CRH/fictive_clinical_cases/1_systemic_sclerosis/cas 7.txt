@@ -62,7 +62,6 @@ I27.2 : Hypertension pulmonaire secondaire.
 
 K21.9 : Reflux gastro-œsophagien, sans précision.
 
-
 ---Axes---
 Immunitaire
 Respiratoire

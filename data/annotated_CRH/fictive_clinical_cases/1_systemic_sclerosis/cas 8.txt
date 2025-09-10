@@ -58,8 +58,6 @@ K63.8 : Autres maladies précisées de l’intestin.
 
 K22.4 : Dyskinésie œsophagienne.
 
-
-
 ---Axes---
 Immunitaire
 Digestif

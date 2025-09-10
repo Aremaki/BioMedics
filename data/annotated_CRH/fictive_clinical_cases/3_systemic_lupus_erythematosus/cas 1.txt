@@ -74,8 +74,7 @@ M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes ou sys
 D64.9 : Anémie sans précision
 N08.5 : Glomérulopathie dans les maladies systémiques
 
-
---Axes--
+---Axes---
 Immunitaire
 Osteomusculaires
 Hemopathie

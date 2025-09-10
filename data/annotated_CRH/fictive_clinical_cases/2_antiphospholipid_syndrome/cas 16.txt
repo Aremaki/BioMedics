@@ -64,9 +64,7 @@ K55.0 : Gangrène de l’intestin.
 
 N17.9 : Insuffisance rénale aiguë, sans précision.
 
-
-
---Axes--
+---Axes---
 Immunitaire
 Cardiovasculaires
 Digestif

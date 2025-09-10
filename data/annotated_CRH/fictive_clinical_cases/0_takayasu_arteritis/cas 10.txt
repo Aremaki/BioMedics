@@ -50,6 +50,5 @@ M31.4 : Artérite de Takayasu.
 
 I70.8 : Autres formes d’athérosclérose.
 
-
---Axes--
+---Axes---
 Cardiovasculaires

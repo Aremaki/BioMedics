@@ -62,7 +62,6 @@ O36.5 : Soins maternels pour iso-immunisation (ici remplacé par) → O26.8 : Au
 
 D68.6 : Autres thrombophilies (syndrome des antiphospholipides).
 
-
 ---Axes---
 Immunitaire
 Urogen

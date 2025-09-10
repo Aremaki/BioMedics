@@ -54,7 +54,6 @@ G45.9 : Accident ischémique transitoire, sans précision.
 
 I65.2 : Occlusion et sténose de l’artère carotide.
 
-
---Axes--
+---Axes---
 Cardiovasculaires
 Nerveux

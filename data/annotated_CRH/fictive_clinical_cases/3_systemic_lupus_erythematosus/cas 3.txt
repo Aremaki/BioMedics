@@ -62,7 +62,6 @@ G40.9 : Épilepsie, sans précision.
 
 F29 : Trouble psychotique non spécifié.
 
-
 ---Axes---
 Immunitaire
 Nerveux
