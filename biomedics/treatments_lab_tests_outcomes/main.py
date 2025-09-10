@@ -1,23 +1,18 @@
 import os
-
-os.environ["OMP_NUM_THREADS"] = "16"
 import sys
 from pathlib import Path
 
 import pandas as pd
-from edstoolbox import SparkApp  # type: ignore
 from loguru import logger
 
-# Initialize app
-app = SparkApp("treatments_and_outcomes")
+os.environ["OMP_NUM_THREADS"] = "16"
 
 
-@app.submit
-def run(spark, sql, config):
+def compute_save_treatments_lab_tests_outcomes(sql, config):
     if config["debug"]["debug"]:
         logger.remove()
         logger.add(sys.stderr, level="DEBUG")
-    script_config = config["treatments_and_outcomes"]
+    script_config = config["treatments_lab_tests_outcomes"]
     input_dirs = script_config["input_dirs"]
     input_dirs = [Path(input_dir).parent for input_dir in input_dirs]
     output_dirs = script_config.get("output_dirs")
@@ -185,7 +180,3 @@ def run(spark, sql, config):
         patient_drugs.to_pickle(f"{output_dir}/treatments.pkl")
         outcome_df.to_pickle(f"{output_dir}/outcomes.pkl")
         patient_nlp_bio.to_pickle(f"{output_dir}/lab_tests.pkl")
-
-
-if __name__ == "__main__":
-    app.run()

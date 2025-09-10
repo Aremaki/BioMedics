@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=coder_inference
+#SBATCH --job-name=Classify_diso
 #SBATCH -t 48:00:00
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=2
@@ -17,7 +17,7 @@ echo -----------------
 echo CLASSIFY DISO
 echo -----------------
 
-python run.py
+python run.py --config ../../configs/end2end/config_study_cortico_v1.cfg
 
 echo --EXTRACTION_FINISHED---
 
