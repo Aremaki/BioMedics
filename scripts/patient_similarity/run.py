@@ -14,7 +14,9 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
     Main function to process clinical cases and find similar patients.
     """
     data_path = BASE_DIR / "data" / "annotated_CRH" / "fictive_clinical_cases"
-    cohort_dirs = [d for d in data_path.iterdir() if d.is_dir()]
+    cohort_dirs = [
+        d for d in data_path.iterdir() if d.is_dir() and d.name.split("_")[0].isdigit()
+    ]
 
     for cohort_dir in cohort_dirs:
         cohort_idx = int(cohort_dir.name.split("_")[0])
