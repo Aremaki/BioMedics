@@ -521,7 +521,9 @@ def pretty_print(df):
 pretty_print(df)
 ```
 
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
 # Expe QUAERO
+<!-- #endregion -->
 
 ```python
 import edsnlp
@@ -729,8 +731,8 @@ pretty_print(scores)
 ```python
 import edsnlp
 
-GOLD_PATH = "../data/annotated_CRH/post_processed/expe_ner_final/test"
-PRED_PATH = "../data/annotated_CRH/post_processed/expe_ner_final/pred/ner"
+GOLD_PATH = "../data/annotated_CRH/post_processed/expe_ner_final_v4/test"
+PRED_PATH = "../data/annotated_CRH/post_processed/expe_ner_final_v4/pred/ner"
 
 loader = edsnlp.blank("eds")
 brat = BratConnector(GOLD_PATH)
@@ -764,17 +766,27 @@ scores = (
                 "strength",
                 "form",
                 "Chemical_and_drugs",
+                "DISO",
+                "Constantes",
+                "Date",
+                "Duration",
+                "Frequency",
             ],
         )
     )
     .T.rename(
         index={
-            "BIO": "0-Laboratory test",
-            "BIO_comp": "1-Complete laboratory test",
-            "Chemical_and_drugs": "2-Drug name",
-            "dosage": "3-Drug dosage",
-            "form": "4-Drug form",
-            "strength": "5-Drug strength",
+            "BIO": "A-Laboratory test",
+            "BIO_comp": "B-Complete laboratory test",
+            "Chemical_and_drugs": "C-Drug name",
+            "dosage": "D-Drug dosage",
+            "form": "E-Drug form",
+            "strength": "F-Drug strength",
+            "Frequency": "G-Drug frequency",
+            "DISO": "H-Disorder",
+            "Constantes": "I-Constant",
+            "Date": "J-Date",
+            "Duration": "K-Duration",
         }
     )
     .sort_index()[columns]
@@ -800,8 +812,8 @@ pretty_print(scores)
 ```python
 import edsnlp
 
-GOLD_PATH = "../data/annotated_CRH/post_processed/expe_ner_final/test"
-PRED_PATH = "../data/annotated_CRH/post_processed/expe_ner_final/pred/qlf"
+GOLD_PATH = "../data/annotated_CRH/post_processed/expe_ner_final_v4/test"
+PRED_PATH = "../data/annotated_CRH/post_processed/expe_ner_final_v4/pred/qlf"
 
 loader = edsnlp.blank("eds")
 brat = BratConnector(GOLD_PATH)
@@ -824,7 +836,7 @@ scores = (
             gold_docs,
             pred_docs,
             qualification=True,
-            qualif_group=True,
+            # qualif_group=True,
             boostrap_level="doc",
             exact=True,
             n_draw=5000,
@@ -832,7 +844,6 @@ scores = (
             digits=1,
             labels_to_keep=[
                 "Action_Decrease",
-                "Action_OtherChange",
                 "Action_Increase",
                 "Action_Start",
                 "Action_UniqueDose",
@@ -864,7 +875,9 @@ def pretty_print(df):
 pretty_print(scores)
 ```
 
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
 # Expe Complete Pipe
+<!-- #endregion -->
 
 ```python
 import edsnlp

@@ -64,10 +64,12 @@ config = Config().from_disk(config_path, interpolate=True)
 <!-- #endregion -->
 
 ```python
-summary_df_docs = pd.read_pickle(join(BRAT_DIR, "summary_df_docs.pkl"))
-bio_from_structured_data = pd.read_pickle(join(RES_DIR, "bio_from_structured_data.pkl"))
+summary_df_docs = pd.read_pickle(BASE_DIR / "data" / "CRH" / "summary_df_docs.pkl")
+bio_from_structured_data = pd.read_pickle(
+    BASE_DIR / "data" / "final_results" / "bio_from_structured_data.pkl"
+)
 med_from_structured_data = pd.read_pickle(
-    join(RES_DRUG_DIR, "med_from_structured_data.pkl")
+    BASE_DIR / "data" / "final_results" / "med_from_structured_data.pkl"
 )
 ```
 
@@ -97,9 +99,7 @@ complete_case_df.groupby("disease").agg(
 )
 ```
 
-<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ## Number of Bio/visit/patient
-<!-- #endregion -->
 
 ```python
 bio_from_structured_data.groupby("disease").agg(
@@ -107,9 +107,7 @@ bio_from_structured_data.groupby("disease").agg(
 )
 ```
 
-<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ## Number of Med/visit/patient
-<!-- #endregion -->
 
 ```python
 med_from_structured_data.groupby("disease").agg(
@@ -117,7 +115,93 @@ med_from_structured_data.groupby("disease").agg(
 )
 ```
 
-## Age histogram
+## Age histogram & Stay Histogram
+
+```python
+summary_df_docs["round_age"] = (summary_df_docs["age_visit_in_years_num"] * 2).round(
+    -1
+) / 2
+summary_df_docs["disease"] = summary_df_docs["disease"].replace(
+    "lupus_erythemateux_dissemine", "Lupus"
+)
+summary_df_docs["disease"] = summary_df_docs["disease"].replace(
+    "syndrome_des_anti-phospholipides", "Antiphospholipid syndrome"
+)
+summary_df_docs["disease"] = summary_df_docs["disease"].replace(
+    "maladie_de_takayasu", "Takayasu’s arteritis"
+)
+summary_df_docs["disease"] = summary_df_docs["disease"].replace(
+    "sclerodermie_systemique", "Systemic sclerosis"
+)
+age_summary = summary_df_docs.groupby(
+    ["disease", "age_visit_in_years_num"], as_index=False
+).agg({"patient_num": "nunique"})
+round_age_summary = summary_df_docs.groupby(
+    ["disease", "round_age"], as_index=False
+).agg({"patient_num": "nunique"})
+total_patient = (
+    summary_df_docs.groupby("disease", as_index=False)
+    .agg({"patient_num": "nunique"})
+    .rename(columns={"patient_num": "total_patient"})
+)
+age_summary = age_summary.merge(total_patient, on="disease")
+age_summary["density"] = age_summary["patient_num"] / age_summary["total_patient"]
+display(age_summary)
+```
+
+```python
+summary_df_docs["month_date"] = (
+    summary_df_docs["start_date"].dt.strftime("%Y-%m").astype("datetime64[ns]")
+)
+month_date_summary = summary_df_docs.groupby(
+    ["disease", "month_date"], as_index=False
+).agg({"encounter_num": "nunique"})
+total_visit = (
+    summary_df_docs.groupby("disease", as_index=False)
+    .agg({"encounter_num": "nunique"})
+    .rename(columns={"encounter_num": "total_visit"})
+)
+month_date_summary = month_date_summary.merge(total_visit, on="disease")
+month_date_summary["density"] = (
+    month_date_summary["encounter_num"] / month_date_summary["total_visit"]
+)
+display(month_date_summary)
+```
+
+```python
+alt.data_transformers.disable_max_rows()
+
+age_chart = (
+    alt.Chart(round_age_summary)
+    .mark_bar(size=12, align="left")
+    .encode(
+        alt.X("round_age:Q").title("Age at stay"),
+        alt.Y("patient_num:Q").title("Number of patients"),
+        alt.Row(
+            "disease:N", header=alt.Header(labelFontSize=18, labelFontWeight="bold")
+        ).title(""),
+    )
+    .resolve_scale(y="independent")
+    .properties(height=200)
+)
+stay_chart = (
+    alt.Chart(month_date_summary)
+    .mark_bar(align="left")
+    .encode(
+        alt.X("yearquarter(month_date):T")
+        .title("Time (Year)")
+        .axis(tickCount="year", labelAngle=0, grid=True, format="%Y"),
+        alt.Y("sum(encounter_num):Q").title("Number of stays"),
+        alt.Row("disease:N").title("").header(None),
+    )
+    .resolve_scale(y="independent")
+    .properties(height=200, width=600)
+)
+final_chart = age_chart | stay_chart
+final_chart = final_chart.configure_axis(labelFontSize=15, titleFontSize=18)
+final_chart.save(BASE_DIR / "figures" / "age_timeline_histo.png")
+display(final_chart)
+```
 
 ```python
 summary_df_docs["round_age"] = (summary_df_docs["age_visit_in_years_num"] * 2).round(
@@ -207,8 +291,6 @@ alt.Chart(age_summary).mark_area().encode(
     color="disease:N",
 ).properties(height=200)
 ```
-
-## Stay start histogramm
 
 ```python
 summary_df_docs["month_date"] = (
@@ -387,7 +469,9 @@ plt.savefig(BASE_DIR / "figures" / disease / "venn_nlp_structured.jpeg")
 plt.show()
 ```
 
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ## Lupus
+<!-- #endregion -->
 
 ```python
 disease = "lupus_erythemateux_dissemine"
@@ -448,6 +532,22 @@ bio_summary_nlp
 ```
 
 ```python
+immunosuppressants = [
+    "Endoxan",
+    "Cellcept",
+    "Rituximab",
+    "Belimumab",
+    "Methotrexate",
+]
+
+nlp_patient_med_group["immunosuppressants"] = reduce(
+    lambda x, y: x | y,
+    (nlp_patient_med_group[col].astype(bool) for col in immunosuppressants),
+)
+structured_patient_med_group["immunosuppressants"] = reduce(
+    lambda x, y: x | y,
+    (structured_patient_med_group[col].astype(bool) for col in immunosuppressants),
+)
 med_summary_nlp = plot_summary_med(
     nlp_patient_med_group,
     structured_patient_med_group,
@@ -475,7 +575,9 @@ plt.savefig(BASE_DIR / "figures" / disease / "venn_nlp_structured.jpeg")
 plt.show()
 ```
 
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
 ## sclerodermie_systemique
+<!-- #endregion -->
 
 ```python
 disease = "sclerodermie_systemique"
@@ -578,11 +680,669 @@ chart = plot_hist(
     structured_filtered_res,
     True,
     False,
+    "Takayasu's arteritis cohort",
+)
+chart.save(
+    BASE_DIR / "figures" / disease / "histogram_NLP_cohort.png", scale_factor=0.95
+)
+display(chart)
+```
+
+```python
+chart = plot_hist(
+    unit_convert,
+    possible_values,
+    nlp_filtered_res,
+    structured_filtered_res,
+    True,
+    False,
     "Takayasu's arteritis",
 )
 chart.save(BASE_DIR / "figures" / disease / "histogram_NLP_cohort.html")
 display(chart)
 ```
+
+<!-- #region jp-MarkdownHeadingCollapsed=true -->
+# Convert All prediction into spacy docs
+<!-- #endregion -->
+
+```python
+import pandas as pd
+import shutil
+import numpy as np
+from biomedics import BASE_DIR
+
+np.random.seed(42)
+
+
+# BRAT_DIR = "/export/home/cse200093/brat_data/guillaume"
+qualifiers_columns_name = ["Action", "Certainty", "Negation", "Temporality"]
+RES_DIR = BASE_DIR / "data" / "CRH" / "pred_v4"
+
+res_bio_df = pd.read_pickle(
+    RES_DIR / "lupus_erythemateux_dissemine_norm" / "pred_bio_coder_all.pkl"
+)
+res_drug_df = pd.read_pickle(
+    RES_DIR / "lupus_erythemateux_dissemine_norm" / "pred_med_fuzzy_jw.pkl"
+)
+```
+
+```python
+res_drug_df["annotation"] = (
+    "Match synonyme: "
+    + res_drug_df["norm_term"].astype(str)
+    + " |ATC codes: "
+    + res_drug_df["label"].astype(str)
+)
+res_drug_df["label"] = "Chemical_and_drugs"
+res_drug_df = res_drug_df[
+    [
+        "term",
+        "source",
+        "span_converted",
+        "label",
+        "annotation",
+    ]
+    + qualifiers_columns_name
+]
+
+res_bio_comp = res_bio_df.copy()
+res_bio_comp["annotation"] = (
+    "Value: "
+    + res_bio_comp["value_cleaned"].astype(str)
+    + " |Unit: "
+    + res_bio_comp["unit"].astype(str)
+    + " |Range value: "
+    + res_bio_comp["range_value"].astype(str)
+    + " |Comment: "
+    + res_bio_comp["non_digit_value"].astype(str)
+)
+res_bio_comp["label"] = "BIO_comp"
+res_bio_comp["term"] = res_bio_comp["term_biocomp"]
+res_bio_comp["span_converted"] = res_bio_comp.apply(
+    lambda row: [int(row.span_start), int(row.span_end)], axis=1
+)
+res_bio_comp = res_bio_comp[["term", "source", "span_converted", "label", "annotation"]]
+
+res_bio_df = res_bio_df[~res_bio_df.span_start_bio.isna()]
+res_bio_df["annotation"] = (
+    "Match synonyme: "
+    + res_bio_df["norm_term"].astype(str)
+    + " |CUI code: "
+    + res_bio_df["label"].astype(str)
+)
+res_bio_df["label"] = "BIO"
+res_bio_df["term"] = res_bio_df["term_bio"]
+res_bio_df["span_converted"] = res_bio_df.apply(
+    lambda row: [int(row.span_start_bio), int(row.span_end_bio)], axis=1
+)
+res_bio_df = res_bio_df[["term", "source", "span_converted", "label", "annotation"]]
+res_df = pd.concat([res_bio_df, res_bio_comp])
+for qualifier in qualifiers_columns_name:
+    res_df[qualifier] = None
+res_df = pd.concat([res_df, res_drug_df])
+```
+
+```python
+from biomedics.ner.brat import BratConnector
+import edsnlp
+import re
+from biomedics import BASE_DIR
+
+RES_DIR = BASE_DIR / "data" / "CRH" / "pred_v4"
+
+docs = BratConnector(RES_DIR / "test").brat2docs(edsnlp.blank("eds"))
+docs = edsnlp.data.from_iterable(docs)
+```
+
+```python
+scheme = {
+    "source": [{"label": "Chemical_and_drugs", "attr": None}],
+    "target": [
+        {"label": "dosage", "attr": None},
+        {"label": "strength", "attr": None},
+        {"label": "form", "attr": None},
+        {"label": "Frequency", "attr": None},
+    ],
+    "type": "Depend",
+    "inv_type": "inv_Depend",
+}
+
+nlp = edsnlp.blank("eds")
+
+# Extraction of entities
+nlp.add_pipe("eds.sentences")
+nlp.add_pipe(
+    "eds.relations",
+    config={
+        "scheme": scheme,
+        "use_sentences": True,
+        "clean_rel": True,
+        "proximity_method": "right",
+        "max_dist": 40,
+    },
+)
+docs = docs.map_pipeline(nlp)
+```
+
+```python
+from spacy.tokens import Span
+from tqdm import tqdm
+
+doc_lists = []
+if not Span.has_extension("note"):
+    Span.set_extension("note", default=None)
+for doc in tqdm(docs, desc="Merging NER and NORM data"):
+    source = doc._.note_id + ".ann"
+    res_norm = res_df[res_df.source == source]
+    for row in res_norm.itertuples():
+        for ent in doc.spans[row.label]:
+            if [ent.start_char, ent.end_char] == row.span_converted:
+                ent._.note = row.annotation
+                break
+    doc.user_data = {
+        k: v
+        for k, v in doc.user_data.items()
+        if "note_id" in k
+        or "context" in k
+        or "split" in k
+        or "Action" in k
+        or "Allergie" in k
+        or "Certainty" in k
+        or "Temporality" in k
+        or "Family" in k
+        or "Negation" in k
+        or "RefTemp" in k
+        or "AttDate" in k
+        or "note" in k
+        or "rel" in k
+    }
+    doc_lists.append(doc)
+```
+
+```python
+doc_lists[0].spans["Chemical_and_drugs"][3]._.rel
+```
+
+```python
+import pickle
+
+with open(RES_DIR / "spacy_docs_test.pkl", "wb") as handle:
+    pickle.dump(doc_lists, handle, protocol=pickle.HIGHEST_PROTOCOL)
+```
+
+```python
+del doc_list
+```
+
+```python
+with open(RES_DIR / "spacy_docs_test.pkl", "rb") as handle:
+    load_docs = pickle.load(handle)
+```
+
+```python
+load_docs[0].spans["Chemical_and_drugs"][3]._.rel
+```
+
+```python jupyter={"outputs_hidden": true}
+list(docs)[0]
+```
+
+```python
+if os.path.exists(f"{BRAT_DIR}/final_pre_annotation_v1"):
+    shutil.rmtree(f"{BRAT_DIR}/final_pre_annotation_v1")
+os.makedirs(f"{BRAT_DIR}/final_pre_annotation_v1")
+shutil.copy(
+    f"{BRAT_DIR}/final/annotation.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/annotation.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/final/kb_shortcuts.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/kb_shortcuts.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/final/visual.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/visual.conf",
+)
+edsnlp.data.write_standoff(
+    list(docs),
+    f"{BRAT_DIR}/final_pre_annotation_v1",
+    overwrite=True,
+    span_getter=["*"],
+    span_attributes=[
+        "Negation",
+        "Family",
+        "Temporality",
+        "Certainty",
+        "Action",
+        "Allergie",
+        "RefTemp",
+        "AttDate",
+    ],
+)
+```
+
+Faire les copier coller
+Ajouter le texte du dossier structuré en haut du document à annoter
+Objectif montrer l'apport du structuré quand il est là
+Et la room too improve
+- % de note avec aucune info ?
+- % où on trouve et les types d'erreurs trouvées ?
+
+
+# Create pre-annotation dataset for Training
+
+```python
+import pandas as pd
+import shutil
+import numpy as np
+
+np.random.seed(42)
+
+
+BRAT_DIR = "/export/home/cse200093/brat_data/guillaume"
+qualifiers_columns_name = ["Action", "Certainty", "Negation", "Temporality"]
+RES_DIR = BASE_DIR / "data" / "CRH" / "final_CG_GF"
+
+res_bio_df = pd.read_pickle(RES_DIR / "pred_norm" / "pred_bio_coder_all.pkl")
+res_drug_df = pd.read_pickle(RES_DIR / "pred_norm" / "pred_med_fuzzy_jw.pkl")
+```
+
+```python
+res_drug_df["annotation"] = (
+    "Match synonyme: "
+    + res_drug_df["norm_term"].astype(str)
+    + " |ATC codes: "
+    + res_drug_df["label"].astype(str)
+)
+res_drug_df["label"] = "Chemical_and_drugs"
+res_drug_df = res_drug_df[
+    [
+        "term",
+        "source",
+        "span_converted",
+        "label",
+        "annotation",
+    ]
+    + qualifiers_columns_name
+]
+
+res_bio_comp = res_bio_df.copy()
+res_bio_comp["annotation"] = (
+    "Value: "
+    + res_bio_comp["value_cleaned"].astype(str)
+    + " |Unit: "
+    + res_bio_comp["unit"].astype(str)
+    + " |Range value: "
+    + res_bio_comp["range_value"].astype(str)
+    + " |Comment: "
+    + res_bio_comp["non_digit_value"].astype(str)
+)
+res_bio_comp["label"] = "BIO_comp"
+res_bio_comp["term"] = res_bio_comp["term_biocomp"]
+res_bio_comp["span_converted"] = res_bio_comp.apply(
+    lambda row: [int(row.span_start), int(row.span_end)], axis=1
+)
+res_bio_comp = res_bio_comp[["term", "source", "span_converted", "label", "annotation"]]
+
+res_bio_df = res_bio_df[~res_bio_df.span_start_bio.isna()]
+res_bio_df["annotation"] = (
+    "Match synonyme: "
+    + res_bio_df["norm_term"].astype(str)
+    + " |CUI code: "
+    + res_bio_df["label"].astype(str)
+)
+res_bio_df["label"] = "BIO"
+res_bio_df["term"] = res_bio_df["term_bio"]
+res_bio_df["span_converted"] = res_bio_df.apply(
+    lambda row: [int(row.span_start_bio), int(row.span_end_bio)], axis=1
+)
+res_bio_df = res_bio_df[["term", "source", "span_converted", "label", "annotation"]]
+res_df = pd.concat([res_bio_df, res_bio_comp])
+for qualifier in qualifiers_columns_name:
+    res_df[qualifier] = None
+res_df = pd.concat([res_df, res_drug_df])
+```
+
+```python
+from biomedics.ner.brat import BratConnector
+import edsnlp
+import re
+
+doc_list = BratConnector(RES_DIR / "pred_ner").brat2docs(edsnlp.blank("eds"))
+docs = edsnlp.data.from_iterable(doc_list)
+```
+
+```python
+from spacy.tokens import Span
+
+if not Span.has_extension("note"):
+    Span.set_extension("note", default=None)
+for doc in doc_list:
+    source = doc._.note_id + ".ann"
+    res_norm = res_df[res_df.source == source]
+    for row in res_norm.itertuples():
+        for ent in doc.spans[row.label]:
+            if [ent.start_char, ent.end_char] == row.span_converted:
+                ent._.note = row.annotation
+                break
+```
+
+```python
+scheme = {
+    "source": [{"label": "Chemical_and_drugs", "attr": None}],
+    "target": [
+        {"label": "dosage", "attr": None},
+        {"label": "strength", "attr": None},
+        {"label": "form", "attr": None},
+        {"label": "Frequency", "attr": None},
+    ],
+    "type": "Depend",
+    "inv_type": "inv_Depend",
+}
+
+nlp = edsnlp.blank("eds")
+
+# Extraction of entities
+nlp.add_pipe("eds.sentences")
+nlp.add_pipe(
+    "eds.relations",
+    config={
+        "scheme": scheme,
+        "use_sentences": True,
+        "clean_rel": True,
+        "proximity_method": "right",
+        "max_dist": 40,
+    },
+)
+docs = docs.map_pipeline(nlp)
+```
+
+```python
+if os.path.exists(f"{BRAT_DIR}/final_pre_annotation_v1"):
+    shutil.rmtree(f"{BRAT_DIR}/final_pre_annotation_v1")
+os.makedirs(f"{BRAT_DIR}/final_pre_annotation_v1")
+shutil.copy(
+    f"{BRAT_DIR}/final/annotation.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/annotation.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/final/kb_shortcuts.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/kb_shortcuts.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/final/visual.conf",
+    f"{BRAT_DIR}/final_pre_annotation_v1/visual.conf",
+)
+edsnlp.data.write_standoff(
+    list(docs),
+    f"{BRAT_DIR}/final_pre_annotation_v1",
+    overwrite=True,
+    span_getter=["*"],
+    span_attributes=[
+        "Negation",
+        "Family",
+        "Temporality",
+        "Certainty",
+        "Action",
+        "Allergie",
+        "RefTemp",
+        "AttDate",
+    ],
+)
+```
+
+Faire les copier coller
+Ajouter le texte du dossier structuré en haut du document à annoter
+Objectif montrer l'apport du structuré quand il est là
+Et la room too improve
+- % de note avec aucune info ?
+- % où on trouve et les types d'erreurs trouvées ?
+
+
+# Create manual dataset for LUPUS QI
+
+```python
+import pandas as pd
+import shutil
+import numpy as np
+
+np.random.seed(42)
+
+
+BRAT_DIR = "/export/home/cse200093/brat_data/BioMedics/lupus_qi"
+qualifiers_columns_name = ["Action", "Certainty", "Negation", "Temporality"]
+RES_DIR = BASE_DIR / "data" / "final_results"
+
+res_bio_df = pd.read_pickle(
+    RES_DIR / "lupus_erythemateux_dissemine" / "pred_bio_coder_all.pkl"
+)
+res_drug_df = pd.read_pickle(
+    RES_DIR / "lupus_erythemateux_dissemine" / "pred_med_fuzzy_jaro_winkler.pkl"
+)
+```
+
+```python
+summary_df_docs = pd.read_pickle(BASE_DIR / "data" / "CRH" / "summary_df_docs.pkl")
+summary_df_docs = summary_df_docs[
+    summary_df_docs.disease == "lupus_erythemateux_dissemine"
+]
+summary_df_docs["source"] = summary_df_docs["instance_num"] + ".ann"
+filtered_bio_df = res_bio_df.merge(
+    summary_df_docs[["source", "patient_num"]].drop_duplicates(),
+    on="source",
+    how="left",
+)
+```
+
+```python
+patient_list = np.random.choice(
+    filtered_bio_df.patient_num.unique(), 100, replace=False
+)
+filtered_bio_df = filtered_bio_df[filtered_bio_df.patient_num.isin(patient_list)][
+    ["source", "patient_num"]
+]
+filtered_bio_df = filtered_bio_df.sample(frac=1).drop_duplicates(subset=["patient_num"])
+stays_list = np.random.choice(filtered_bio_df.source.unique(), 100, replace=False)
+```
+
+```python
+if os.path.exists(BASE_DIR / "data" / "CRH" / "pred_lupus_qi"):
+    shutil.rmtree(BASE_DIR / "data" / "CRH" / "pred_lupus_qi")
+os.makedirs(BASE_DIR / "data" / "CRH" / "pred_lupus_qi")
+if os.path.exists(BASE_DIR / "data" / "CRH" / "raw_lupus_qi"):
+    shutil.rmtree(BASE_DIR / "data" / "CRH" / "raw_lupus_qi")
+os.makedirs(BASE_DIR / "data" / "CRH" / "raw_lupus_qi")
+for filename in os.listdir(
+    BASE_DIR / "data" / "CRH" / "pred_v2" / "lupus_erythemateux_dissemine"
+):
+    ann_file = filename
+    txt_file = filename[:-4] + ".txt"
+    if filename in stays_list:
+        shutil.copy(
+            BASE_DIR
+            / "data"
+            / "CRH"
+            / "pred_v2"
+            / "lupus_erythemateux_dissemine"
+            / txt_file,
+            BASE_DIR / "data" / "CRH" / "pred_lupus_qi",
+        )
+        shutil.copy(
+            BASE_DIR
+            / "data"
+            / "CRH"
+            / "pred_v2"
+            / "lupus_erythemateux_dissemine"
+            / ann_file,
+            BASE_DIR / "data" / "CRH" / "pred_lupus_qi",
+        )
+        open(BASE_DIR / "data" / "CRH" / "raw_lupus_qi" / ann_file, mode="a").close()
+        shutil.copy(
+            BASE_DIR
+            / "data"
+            / "CRH"
+            / "pred_v2"
+            / "lupus_erythemateux_dissemine"
+            / txt_file,
+            BASE_DIR / "data" / "CRH" / "raw_lupus_qi",
+        )
+```
+
+```python
+res_drug_df = res_drug_df[res_drug_df.source.isin(stays_list)]
+res_drug_df["annotation"] = (
+    "Match synonyme: "
+    + res_drug_df["norm_term"].astype(str)
+    + " |ATC codes: "
+    + res_drug_df["label"].astype(str)
+)
+res_drug_df["label"] = "Chemical_and_drugs"
+res_drug_df = res_drug_df[
+    [
+        "term",
+        "source",
+        "span_converted",
+        "label",
+        "annotation",
+    ]
+    + qualifiers_columns_name
+]
+
+res_bio_df = res_bio_df[res_bio_df.source.isin(stays_list)]
+res_bio_comp = res_bio_df.copy()
+res_bio_comp["annotation"] = (
+    "Value: "
+    + res_bio_comp["value_cleaned"].astype(str)
+    + " |Unit: "
+    + res_bio_comp["unit"].astype(str)
+    + " |Range value: "
+    + res_bio_comp["range_value"].astype(str)
+    + " |Comment: "
+    + res_bio_comp["non_digit_value"].astype(str)
+)
+res_bio_comp["label"] = "BIO_comp"
+res_bio_comp["term"] = res_bio_comp["term_biocomp"]
+res_bio_comp["span_converted"] = res_bio_comp.apply(
+    lambda row: [int(row.span_start), int(row.span_end)], axis=1
+)
+res_bio_comp = res_bio_comp[["term", "source", "span_converted", "label", "annotation"]]
+
+res_bio_df = res_bio_df[~res_bio_df.span_start_bio.isna()]
+res_bio_df["annotation"] = (
+    "Match synonyme: "
+    + res_bio_df["norm_term"].astype(str)
+    + " |CUI code: "
+    + res_bio_df["label"].astype(str)
+)
+res_bio_df["label"] = "BIO"
+res_bio_df["term"] = res_bio_df["term_bio"]
+res_bio_df["span_converted"] = res_bio_df.apply(
+    lambda row: [int(row.span_start_bio), int(row.span_end_bio)], axis=1
+)
+res_bio_df = res_bio_df[["term", "source", "span_converted", "label", "annotation"]]
+res_df = pd.concat([res_bio_df, res_bio_comp])
+for qualifier in qualifiers_columns_name:
+    res_df[qualifier] = None
+res_df = pd.concat([res_df, res_drug_df])
+```
+
+```python
+from biomedics.ner.brat import BratConnector
+import edsnlp
+import re
+
+doc_list = BratConnector(BASE_DIR / "data" / "CRH" / "pred_lupus_qi").brat2docs(
+    edsnlp.blank("eds")
+)
+docs = edsnlp.data.from_iterable(doc_list)
+```
+
+```python
+from spacy.tokens import Span
+
+if not Span.has_extension("note"):
+    Span.set_extension("note", default=None)
+for doc in doc_list:
+    source = doc._.note_id + ".ann"
+    res_norm = res_df[res_df.source == source]
+    for row in res_norm.itertuples():
+        for ent in doc.spans[row.label]:
+            if [ent.start_char, ent.end_char] == row.span_converted:
+                ent._.note = row.annotation
+                break
+```
+
+```python
+scheme = {
+    "source": [{"label": "Chemical_and_drugs", "attr": None}],
+    "target": [
+        {"label": "dosage", "attr": None},
+        {"label": "strength", "attr": None},
+        {"label": "form", "attr": None},
+        {"label": "Frequency", "attr": None},
+    ],
+    "type": "Depend",
+    "inv_type": "inv_Depend",
+}
+
+nlp = edsnlp.blank("eds")
+
+# Extraction of entities
+nlp.add_pipe("eds.sentences")
+nlp.add_pipe(
+    "eds.relations",
+    config={
+        "scheme": scheme,
+        "use_sentences": True,
+        "clean_rel": True,
+        "proximity_method": "right",
+        "max_dist": 40,
+    },
+)
+docs = docs.map_pipeline(nlp)
+```
+
+```python
+if os.path.exists(f"{BRAT_DIR}/predictions_v1"):
+    shutil.rmtree(f"{BRAT_DIR}/predictions_v1")
+os.makedirs(f"{BRAT_DIR}/predictions_v1")
+shutil.copy(
+    f"{BRAT_DIR}/annotation.conf",
+    f"{BRAT_DIR}/predictions_v1/annotation.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/kb_shortcuts.conf",
+    f"{BRAT_DIR}/predictions_v1/kb_shortcuts.conf",
+)
+shutil.copy(
+    f"{BRAT_DIR}/visual.conf",
+    f"{BRAT_DIR}/predictions_v1/visual.conf",
+)
+edsnlp.data.write_standoff(
+    list(docs),
+    f"{BRAT_DIR}/predictions_v1",
+    overwrite=True,
+    span_getter=["*"],
+    span_attributes=[
+        "Negation",
+        "Family",
+        "Temporality",
+        "Certainty",
+        "Action",
+        "Allergie",
+        "RefTemp",
+        "AttDate",
+    ],
+)
+```
+
+Faire les copier coller
+Ajouter le texte du dossier structuré en haut du document à annoter
+Objectif montrer l'apport du structuré quand il est là
+Et la room too improve
+- % de note avec aucune info ?
+- % où on trouve et les types d'erreurs trouvées ?
 
 <!-- #region jp-MarkdownHeadingCollapsed=true -->
 # Create manual dataset for error analysis on validation cohort
@@ -859,9 +1619,8 @@ Et la room too improve
 - % de note avec aucune info ?
 - % où on trouve et les types d'erreurs trouvées ?
 
-<!-- #region jp-MarkdownHeadingCollapsed=true -->
+
 # Create manual dataset for precision evaluation
-<!-- #endregion -->
 
 ```python
 from export_pandas_to_brat import export_pandas_to_brat

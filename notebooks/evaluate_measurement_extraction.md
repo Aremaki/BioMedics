@@ -504,11 +504,11 @@ for doc in docs:
     binary_results["FN"][0] += res_doc["FN"]
     results_per_doc[doc] = res_doc
 
-precision_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FP"][0]
+precision_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FP"][0])
 )
-recall_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FN"][0]
+recall_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FN"][0])
 )
 n_entity_init = binary_results["TP"][0] + binary_results["FN"][0]
 binary_results["Precision"].append(precision_init)
@@ -529,8 +529,8 @@ for i in tqdm(range(1, n_draw)):
         binary_result["FP"] += results_per_doc[doc]["FP"]
         binary_result["FN"] += results_per_doc[doc]["FN"]
 
-    precision = binary_result["TP"] / (binary_result["TP"] + binary_result["FP"])
-    recall = binary_result["TP"] / (binary_result["TP"] + binary_result["FN"])
+    precision = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FP"])
+    recall = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FN"])
     f1 = 2 * (precision * recall) / (precision + recall)
     n_entity = binary_result["TP"] + binary_result["FN"]
 
@@ -543,19 +543,19 @@ for i in tqdm(range(1, n_draw)):
     binary_results["N_entity"].append(n_entity)
 
 n_entities = binary_results["N_entity"][0]
-precision = round(binary_results["Precision"][0], 2)
-recall = round(binary_results["Recall"][0], 2)
-f1 = round(binary_results["F1"][0], 2)
+precision = round(binary_results["Precision"][0], 1)
+recall = round(binary_results["Recall"][0], 1)
+f1 = round(binary_results["F1"][0], 1)
 n_entities_lower_bound = int(np.quantile(binary_results["N_entity"], (alpha / 2)))
 n_entities_upper_bound = int(np.quantile(binary_results["N_entity"], (1 - alpha / 2)))
-precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 2)
+precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 1)
 precision_upper_bound = round(
-    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 2
+    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 1
 )
-recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 2)
-recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 2)
-f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 2)
-f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 2)
+recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 1)
+recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 1)
+f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 1)
+f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 1)
 precision_result = "{} [{}, {}]".format(
     precision, precision_lower_bound, precision_upper_bound
 )
@@ -1015,11 +1015,11 @@ for doc in docs:
     binary_results["FN"][0] += res_doc["FN"]
     results_per_doc[doc] = res_doc
 
-precision_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FP"][0]
+precision_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FP"][0])
 )
-recall_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FN"][0]
+recall_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FN"][0])
 )
 binary_results["Precision"].append(precision_init)
 binary_results["Recall"].append(recall_init)
@@ -1039,8 +1039,8 @@ for i in tqdm(range(1, n_draw)):
         binary_result["FP"] += results_per_doc[doc]["FP"]
         binary_result["FN"] += results_per_doc[doc]["FN"]
 
-    precision = binary_result["TP"] / (binary_result["TP"] + binary_result["FP"])
-    recall = binary_result["TP"] / (binary_result["TP"] + binary_result["FN"])
+    precision = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FP"])
+    recall = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FN"])
     f1 = 2 * (precision * recall) / (precision + recall)
 
     binary_results["TP"].append(binary_result["TP"])
@@ -1052,19 +1052,19 @@ for i in tqdm(range(1, n_draw)):
     binary_results["F1"].append(f1)
 
 n_entities = binary_results["N_entity"][0]
-precision = round(binary_results["Precision"][0], 2)
-recall = round(binary_results["Recall"][0], 2)
-f1 = round(binary_results["F1"][0], 2)
+precision = round(binary_results["Precision"][0], 1)
+recall = round(binary_results["Recall"][0], 1)
+f1 = round(binary_results["F1"][0], 1)
 n_entities_lower_bound = int(np.quantile(binary_results["N_entity"], (alpha / 2)))
 n_entities_upper_bound = int(np.quantile(binary_results["N_entity"], (1 - alpha / 2)))
-precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 2)
+precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 1)
 precision_upper_bound = round(
-    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 2
+    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 1
 )
-recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 2)
-recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 2)
-f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 2)
-f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 2)
+recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 1)
+recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 1)
+f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 1)
+f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 1)
 precision_result = "{} [{}-{}]".format(
     precision, precision_lower_bound, precision_upper_bound
 )
@@ -1263,11 +1263,11 @@ for doc in docs:
     binary_results["FN"][0] += res_doc["FN"]
     results_per_doc[doc] = res_doc
 
-precision_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FP"][0]
+precision_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FP"][0])
 )
-recall_init = binary_results["TP"][0] / (
-    binary_results["TP"][0] + binary_results["FN"][0]
+recall_init = (
+    binary_results["TP"][0] * 100 / (binary_results["TP"][0] + binary_results["FN"][0])
 )
 binary_results["Precision"].append(precision_init)
 binary_results["Recall"].append(recall_init)
@@ -1287,8 +1287,8 @@ for i in tqdm(range(1, n_draw)):
         binary_result["FP"] += results_per_doc[doc]["FP"]
         binary_result["FN"] += results_per_doc[doc]["FN"]
 
-    precision = binary_result["TP"] / (binary_result["TP"] + binary_result["FP"])
-    recall = binary_result["TP"] / (binary_result["TP"] + binary_result["FN"])
+    precision = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FP"])
+    recall = binary_result["TP"] * 100 / (binary_result["TP"] + binary_result["FN"])
     f1 = 2 * (precision * recall) / (precision + recall)
 
     binary_results["TP"].append(binary_result["TP"])
@@ -1300,19 +1300,19 @@ for i in tqdm(range(1, n_draw)):
     binary_results["F1"].append(f1)
 
 n_entities = binary_results["N_entity"][0]
-precision = round(binary_results["Precision"][0], 2)
-recall = round(binary_results["Recall"][0], 2)
-f1 = round(binary_results["F1"][0], 2)
+precision = round(binary_results["Precision"][0], 1)
+recall = round(binary_results["Recall"][0], 1)
+f1 = round(binary_results["F1"][0], 1)
 n_entities_lower_bound = int(np.quantile(binary_results["N_entity"], (alpha / 2)))
 n_entities_upper_bound = int(np.quantile(binary_results["N_entity"], (1 - alpha / 2)))
-precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 2)
+precision_lower_bound = round(np.quantile(binary_results["Precision"], (alpha / 2)), 1)
 precision_upper_bound = round(
-    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 2
+    np.quantile(binary_results["Precision"], (1 - alpha / 2)), 1
 )
-recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 2)
-recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 2)
-f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 2)
-f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 2)
+recall_lower_bound = round(np.quantile(binary_results["Recall"], (alpha / 2)), 1)
+recall_upper_bound = round(np.quantile(binary_results["Recall"], (1 - alpha / 2)), 1)
+f1_lower_bound = round(np.quantile(binary_results["F1"], (alpha / 2)), 1)
+f1_upper_bound = round(np.quantile(binary_results["F1"], (1 - alpha / 2)), 1)
 precision_result = "{} [{}-{}]".format(
     precision, precision_lower_bound, precision_upper_bound
 )
