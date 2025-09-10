@@ -1,0 +1,74 @@
+Motif d’hospitalisation
+
+Syndrome œdémateux récent avec protéinurie massive.
+
+Mode de vie
+
+Femme de 32 ans, employée de bureau, tabagisme actif à 5 cigarettes/jour soit 7 PA, pas d’alcool.
+
+Antécédents médicaux
+
+LED diagnostiqué 5 ans plus tôt (atteinte cutanée et articulaire).
+
+Poussée traitée initialement par prednisone, puis relais par hydroxychloroquine.
+
+Pas d’autres antécédents notables.
+
+Traitements habituels
+
+Hydroxychloroquine 200 mg/j. Pas d’immunosuppresseur actuellement.
+
+Histoire de la maladie
+
+Depuis 3 semaines : œdèmes des chevilles progressifs, prise de poids de 4 kg, urines mousseuses. Pas de dyspnée ni douleur thoracique.
+
+Examen clinique
+
+TA 140/90 mmHg, FC 88/min, T° 37,2 °C.
+
+Œdèmes déclives bilatéraux jusqu’aux genoux.
+
+Pas d’éruption cutanée active.
+
+Articulations : souples, non inflammatoires.
+
+Auscultation cardiaque et pulmonaire : RAS.
+
+Examens complémentaires
+
+NFS : Hb 11,5 g/dL, leucocytes 3,0 G/L (lymphopénie), plaquettes 180 G/L.
+
+Créatinine : 110 µmol/L (DFG 65 mL/min).
+
+Protéinurie 24h : 4,8 g/24h.
+
+Albuminémie : 23 g/L.
+
+Compléments : C3 = 0,35 g/L (bas), C4 = 0,07 g/L (bas).
+
+Sérologies auto-immunes : anti-DNA natifs fortement positifs.
+
+Biopsie rénale : glomérulonéphrite lupique proliférative diffuse classe IV
+
+Évolution
+
+Introduction d’une corticothérapie IV (bolus méthylprednisolone 3 × 500 mg), puis prednisone 1 mg/kg/j associée à Mycophénolate Mofétil. Réduction rapide de la protéinurie et amélioration clinique après 4 semaines.
+
+Conclusion
+
+Lupus érythémateux disséminé avec néphrite lupique proliférative diffuse.
+
+
+
+-----Codes CIM-10-----
+
+M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes ou systèmes (DP).
+
+N08.5 : Glomérulopathie dans les maladies systémiques.
+
+D72.8 : Autres anomalies précisées des leucocytes (lymphopénie).
+
+
+--Axes--
+Immunitaire
+Urogen

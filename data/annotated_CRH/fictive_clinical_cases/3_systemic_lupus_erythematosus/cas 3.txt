@@ -1,0 +1,68 @@
+Motif d’hospitalisation
+
+Troubles de l’humeur et convulsions récentes.
+
+Mode de vie
+
+Femme de 27 ans, sans emploi, non fumeuse, pas d’alcool.
+
+Antécédents médicaux
+
+LED diagnostiqué 2 ans auparavant (atteinte cutanée et hématologique).
+
+Antécédent d’épisode dépressif modéré.
+
+Traitements habituels
+
+Hydroxychloroquine 200 mg/j, prednisone 7,5 mg/j.
+
+Histoire de la maladie
+
+Depuis 1 mois : troubles du sommeil, ralentissement psychomoteur, idées de persécution. Une crise généralisée tonico-clonique survenue il y a 48 h.
+
+Examen clinique
+
+Consciente, mais lente, discours désorganisé.
+
+Examen neurologique : réflexes vifs mais symétriques, pas de déficit moteur.
+
+Rash cutané discret au visage.
+
+Pas de fièvre.
+
+Examens complémentaires
+
+NFS : Hb 12 g/dL, leucocytes 2,8 G/L, plaquettes 150 G/L.
+
+CRP : 9 mg/L.
+
+Compléments : C3 = 0,42 g/L, C4 = 0,06 g/L.
+
+Sérologies : anti-DNA natifs positifs, anti-phospholipides négatifs.
+
+IRM cérébrale : hypersignaux T2 dans les régions frontales bilatérales.
+
+EEG : anomalies épileptiformes diffuses.
+
+LCR : pléiocytose lymphocytaire modérée (20/mm³), protéines 0,7 g/L.
+
+Évolution
+
+Prise en charge en neurologie avec bolus IV de méthylprednisolone, puis relais prednisone forte dose + ajout de cyclophosphamide IV. Mise sous antiépileptique (lamotrigine). Évolution favorable avec stabilisation clinique.
+
+Conclusion
+
+Lupus érythémateux disséminé avec atteinte neuropsychiatrique (encéphalopathie lupique avec crise épileptique).
+
+-----Codes CIM-10-----
+
+M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes ou systèmes (DP).
+
+G40.9 : Épilepsie, sans précision.
+
+F29 : Trouble psychotique non spécifié.
+
+
+---Axes---
+Immunitaire
+Nerveux

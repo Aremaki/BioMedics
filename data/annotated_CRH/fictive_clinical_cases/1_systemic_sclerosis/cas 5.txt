@@ -1,0 +1,69 @@
+Motif d’hospitalisation
+
+Dyspnée progressive et toux sèche depuis 3 mois.
+
+Mode de vie
+
+Femme de 45 ans, prof de math, non fumeuse, pas d’alcool.
+
+Antécédents médicaux
+
+Phénomène de Raynaud depuis 2 ans.
+
+Pas d’autre antécédent.
+
+Traitements habituels
+
+Nifédipine 30 mg/j pour un Raynaud.
+
+Histoire de la maladie
+
+Depuis 6 mois : induration cutanée des mains et avant-bras, rétraction cutanée. Depuis 3 mois : dyspnée d’effort stade II.
+
+Examen clinique
+
+TA 115/70 mmHg, FC 90/min, T° 36,8 °C.
+
+Sclérodactylie avec ulcérations digitales cicatrisées.
+
+Peau épaissie au niveau des mains, avant-bras et thorax. Score de Rodnan à 12
+
+Auscultation pulmonaire : crépitants secs aux bases.
+
+Pas d’œdème ni d’anomalie à l'auscultation cardiaque.
+
+
+Examens complémentaires
+
+NFS : normale.
+
+CRP : 8 mg/L.
+
+Sérologies auto-immunes : anticorps anti-Scl-70 positifs, ANA 1/640.
+
+EFR : CPT 68 % prédite, DLCO 45 %.
+
+Scanner thoracique : fibrose pulmonaire basale, aspect de pneumopathie interstitielle non spécifique (PINS).
+
+Écho cardiaque : normale.
+
+Évolution
+
+Introduction de mycophénolate mofétil et poursuite nifédipine. Réhabilitation respiratoire proposée. Surveillance trimestrielle de la fonction pulmonaire.
+
+Conclusion
+
+Sclérodermie systémique cutanée diffuse avec atteinte pulmonaire interstitielle fibrosante.
+
+-----Codes CIM-10-----
+
+M34.1 : Autres formes de sclérodermie progressive systémique (DP).
+
+J84.1 : Autres maladies pulmonaires interstitielles spécifiques.
+
+I73.0 : Maladie de Raynaud.
+
+
+---Axes---
+Immunitaire
+Respiratoire

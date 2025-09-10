@@ -1,0 +1,54 @@
+Motif d’hospitalisation
+
+Prise en charge d’une fausse couche tardive à 18 SA.
+
+Mode de vie
+
+Femme de 30 ans, institutrice, non fumeuse.
+
+Antécédents médicaux
+
+Deux fausses couches précoces (8 et 9 SA).
+
+Une mort fœtale in utero à 22 SA il y a 2 ans.
+
+Traitements habituels
+
+Acide folique, pas d’anticoagulant en préconceptionnel.
+
+Histoire de la maladie
+
+Suivie pour grossesse actuelle, perte brutale de mouvements actifs fœtaux à 18 SA confirmée par échographie (mort fœtale in utero).
+
+Examen clinique
+
+TA 120/75 mmHg, FC 88/min, T° 37 °C.
+
+Examen obstétrical : utérus indolore, col fermé.
+
+Examens complémentaires
+
+Écho obstétricale : absence d’activité cardiaque fœtale.
+
+Bilan maternel : pas de prééclampsie, pas d’infection.
+
+Biologie : anticorps anticardiolipine IgG et IgM positifs, anti-β2-glycoprotéine I positifs (contrôle à 12 semaines).
+
+Évolution
+
+Évacuation utérine. Diagnostic de SAPL obstétrical posé. Pour les grossesses futures : indication d’aspirine faible dose + HBPM prophylactique.
+
+Conclusion
+
+Syndrome des antiphospholipides obstétrical, révélé par pertes fœtales à répétition.
+
+-----Codes CIM-10-----
+
+D68.6 : Autres thrombophilies (SAPL).
+
+O36.4 : Mort fœtale intra-utérine.
+
+
+--Axes--
+Immunitaire
+Urogen

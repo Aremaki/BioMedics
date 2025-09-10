@@ -1,0 +1,73 @@
+Motif d’hospitalisation
+
+Choc et défaillances multiviscérales.
+
+Mode de vie
+
+Femme de 41 ans, infirmière, non fumeuse, contraception progestative seule.
+
+Antécédents médicaux
+
+SAPL primaire diagnostiqué 5 ans auparavant (TVP récidivantes).
+
+Sous AVK au long cours (INR cible 2,5–3).
+
+Traitements habituels
+
+Warfarine, acide folique.
+
+Histoire de la maladie
+
+Admise en urgence pour dyspnée brutale, douleur abdominale intense et oligo-anurie.
+
+Examen clinique
+
+TA 85/50 mmHg, FC 120/min, T° 38,5 °C, SpO₂ 88 %.
+
+Polypnée, crépitants bilatéraux.
+
+Abdomen sensible diffus.
+
+Pouls périphériques diminués.
+
+Examens complémentaires
+
+NFS : Hb 10,8 g/dL, plaquettes 45 G/L.
+
+CRP : 120 mg/L.
+
+Créatinine : 380 µmol/L.
+
+LDH élevé, hémolyse micro-angiopathique.
+
+Scanner thoraco-abdominal : embolies pulmonaires bilatérales, infarctus splénique et ischémie intestinale.
+
+Échographie cardiaque : thrombose de la valve mitrale.
+
+Anticorps anti-cardiolipine et anti-β2GP1 fortement positifs.
+
+Évolution
+
+Prise en charge en réanimation : anticoagulation par héparine non fractionnée, bolus de corticoïdes, échanges plasmatiques, rituximab. Pronostic vital réservé, amélioration progressive après 3 semaines.
+
+Conclusion
+
+Syndrome des antiphospholipides catastrophique, avec atteintes pulmonaire, rénale, cardiaque et digestive.
+
+Codes CIM-10
+
+D68.6 : Autres thrombophilies (SAPL).
+
+I26.9 : Embolie pulmonaire sans précision.
+
+K55.0 : Gangrène de l’intestin.
+
+N17.9 : Insuffisance rénale aiguë, sans précision.
+
+
+
+--Axes--
+Immunitaire
+Cardiovasculaires
+Digestif
+Urogen

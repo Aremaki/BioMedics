@@ -1,0 +1,60 @@
+Motif d’hospitalisation
+
+Accident ischémique transitoire (AIT).
+
+Mode de vie
+
+Femme de 35 ans, architecte, non fumeuse, sport réguliers.
+
+Antécédents médicaux
+
+Takayasu diagnostiqué 4 ans plus tôt, sous corticoïdes avec relais méthotrexate.
+
+Traitements habituels
+
+Méthotrexate 20 mg/semaine, prednisone 5 mg/j.
+
+Histoire de la maladie
+
+Survenue brutale d’une hémiparésie gauche de 10 min avec récupération complète. Céphalées chroniques depuis plusieurs semaines.
+
+Examen clinique
+
+TA 120/70 mmHg, FC 82/min.
+
+Souffle carotidien droit.
+
+Examen neurologique normal à l’admission.
+
+Pouls radial droit diminué.
+
+Examens complémentaires
+
+NFS : normale.
+
+CRP : 25 mg/L.
+
+Angio-IRM cervicale : sténose 70 % carotide commune droite, épaississement diffus de la paroi carotidienne.
+
+IRM cérébrale : pas d’infarctus constitué.
+
+Évolution
+
+Hospitalisation en neurologie, antiagrégant plaquettaire instauré (aspirine), corticothérapie augmentée (prednisone 0,8 mg/kg). Surveillance rapprochée vasculaire et neurologique.
+
+Conclusion
+
+Takayasu avec sténose carotidienne sévère, compliqué d'un AIT.
+
+-----Codes CIM-10-----
+
+M31.4 : Artérite de Takayasu.
+
+G45.9 : Accident ischémique transitoire, sans précision.
+
+I65.2 : Occlusion et sténose de l’artère carotide.
+
+
+--Axes--
+Cardiovasculaires
+Nerveux

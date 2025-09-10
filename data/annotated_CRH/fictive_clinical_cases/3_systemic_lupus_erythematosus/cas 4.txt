@@ -1,0 +1,68 @@
+Motif d’hospitalisation
+
+Douleurs articulaires et menace d’accouchement prématuré à 28 SA.
+
+Mode de vie
+
+Femme enceinte de 30 ans, institutrice, non fumeuse, pas d’alcool.
+
+Antécédents médicaux
+
+LED diagnostiqué il y a 3 ans (rash, arthralgies).
+
+Une fausse couche spontanée à 10 SA.
+
+Anticorps anti phospholipides connus positifs.
+
+Traitements habituels
+
+Hydroxychloroquine 400 mg/j, aspirine faible dose 75 mg/j.
+
+Histoire de la maladie
+
+Depuis 1 mois : arthralgies inflammatoires des mains et genoux. Depuis 1 semaine : contractions utérines précoces.
+
+Examen clinique
+
+TA 120/70 mmHg, FC 88/min, T° 37,3 °C.
+
+Rash malaire discret, arthrites bilatérales genoux.
+
+Obstétrique : col raccourci à 20 mm, contractions régulières.
+
+Pas de signe neurologique ni cardiorespiratoire.
+
+Examens complémentaires
+
+NFS : Hb 11,2 g/dL, leucocytes 3,2 G/L, plaquettes 140 G/L.
+
+Protéinurie 24h : 0,2 g/24h.
+
+Compléments abaissés (C3 = 0,55 g/L, C4 = 0,08 g/L).
+
+Sérologies : anti-DNA natifs positifs, anti-cardiolipines IgG fortement positifs.
+
+Échographie obstétricale : fœtus eutrophe, liquide amniotique normal.
+
+Évolution
+
+Repos strict, corticothérapie modérée (prednisone 20 mg/j), poursuite hydroxychloroquine + aspirine, introduction héparine de bas poids moléculaire prophylactique. Contractions contrôlées par tocolyse. Grossesse prolongée jusqu’à 36 SA, accouchement par césarienne d’un nouveau-né vivant et eutrophe.
+
+Conclusion
+
+Lupus érythémateux disséminé cutanéo-articulaire compliqué d’un syndrome des anti-phospholipides obstétrical avec menace d’accouchement prématuré.
+
+-----Codes CIM-10-----
+
+M32.1 : Lupus érythémateux disséminé avec atteinte d’autres organes ou systèmes (DP).
+
+O14.1 : Pré-éclampsie modérée (si tension élevée, ici non → sinon non codé).
+
+O36.5 : Soins maternels pour iso-immunisation (ici remplacé par) → O26.8 : Autres affections précisées de la grossesse, non classées ailleurs (menace d’accouchement prématuré).
+
+D68.6 : Autres thrombophilies (syndrome des antiphospholipides).
+
+
+---Axes---
+Immunitaire
+Urogen
