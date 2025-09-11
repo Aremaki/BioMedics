@@ -152,7 +152,7 @@ def process_and_sort_CRH_similarity(
     )
     # Add a column with rank value
     distances_embedding = distances_embedding.sort_values(
-        by="similarity_distance", ascending=False
+        by="similarity_distance", ascending=True
     )
     distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
 
