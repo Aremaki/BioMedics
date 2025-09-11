@@ -94,6 +94,9 @@ def process_and_sort_CRH_similarity(
     cim10_codes = [
         "CIM10:" + code.split(" : ")[0].replace(".", "") for code in cim10_codes
     ]
+    outcomes["icd10_codes"] = (
+        outcomes["icd10_codes"].str.split("|").str.get(0)
+    )  # keep only the code, remove the name
     outcomes["matched_icd10_codes"] = outcomes["icd10_codes"].apply(
         lambda codes: [
             code
