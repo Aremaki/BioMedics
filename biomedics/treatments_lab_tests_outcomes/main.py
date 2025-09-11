@@ -132,12 +132,15 @@ def compute_save_treatments_lab_tests_outcomes(sql, config):
         doc_ids = list(set(patient_drugs["source"].str.split(".").str.get(0).to_list()))
         sql("USE cse_200093_20210402")
         outcome_df = sql(
-            """SELECT doc.instance_num, cim10.concept_cd AS icd10_codes, concept.name_char AS icd10_name, doc.encounter_num, doc.patient_num, visit.age_visit_in_years_num, visit.start_date, visit.mode_sortie, visit.length_of_stay, patient.death_date FROM i2b2_observation_doc AS doc JOIN i2b2_visit AS visit ON doc.encounter_num = visit.encounter_num JOIN i2b2_patient AS patient ON doc.patient_num = patient.patient_num JOIN i2b2_observation_cim10 AS cim10 ON doc.encounter_num = cim10.encounter_num JOIN i2b2_concept AS concept ON cim10.concept_cd = concept.concept_cd
+            """SELECT doc.instance_num, cim10.concept_cd AS icd10_codes, concept.name_char AS icd10_names, doc.encounter_num, doc.patient_num, visit.age_visit_in_years_num, visit.start_date, visit.mode_sortie, visit.length_of_stay, patient.death_date FROM i2b2_observation_doc AS doc JOIN i2b2_visit AS visit ON doc.encounter_num = visit.encounter_num JOIN i2b2_patient AS patient ON doc.patient_num = patient.patient_num JOIN i2b2_observation_cim10 AS cim10 ON doc.encounter_num = cim10.encounter_num JOIN i2b2_concept AS concept ON cim10.concept_cd = concept.concept_cd
                           WHERE (doc.concept_cd == 'CR:CRH-HOSPI' OR doc.concept_cd == 'CR:CRH-S')
                           """
         )
         outcome_df = outcome_df.filter(outcome_df.instance_num.isin(doc_ids)).toPandas()
         outcome_df["source"] = outcome_df["instance_num"] + ".ann"
+        outcome_df["icd10_codes"] = (
+            outcome_df["icd10_codes"] + "|" + outcome_df["icd10_names"]
+        )
         outcome_df = outcome_df[
             [
                 "source",
