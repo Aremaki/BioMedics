@@ -519,12 +519,7 @@ def _generate_wordcloud(term_list, title):
     wordcloud = WordCloud(
         width=800, height=400, background_color="white", colormap="cool"
     ).generate_from_frequencies(count_dict)
-
-    plt.figure(figsize=(6, 3))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-    plt.title(title, fontsize=14, color="black")
-    plt.show()
+    return wordcloud
 
 
 def generate_wordcloud(target_patients, selected_specialties, most_similar_patients):
@@ -581,3 +576,335 @@ def parse_clinical_case(file_path: Path):
     ]
 
     return clinical_text, cim10_codes, sepcialities
+
+
+def plot_output_outcomes(
+    topk_outcomes,
+    topk_drugs,
+    topk_lab_tests,
+    topk_disorder,
+    specialties,
+    bio_config,
+    treatment_config,
+    total_note,
+    max_icd10=30,
+):
+    """
+    Interactive Altair plots for outcomes:
+    - Length of stay (boxplot, filtered)
+    - Death outcomes (bar chart % with selection)
+    - Top ICD-10 codes (bar chart, filtered)
+    """
+
+    # Disorder word_cloud
+    wordclouds = []
+    topk_disorder["labels"] = topk_disorder["labels"].str.split(r" \| ")
+    disorder_df = topk_disorder.explode("labels")
+    disorder_df = (
+        disorder_df[disorder_df.labels.isin(specialties)]
+        .groupby("labels")
+        .agg({"normalized_term": list})
+        .to_dict(orient="index")
+    )
+    # Generate word clouds
+    for label in disorder_df.keys():
+        wordclouds.append(
+            _generate_wordcloud(disorder_df[label]["normalized_term"], label)
+        )
+
+    # --- Death dataframe ---
+    death_cols = [
+        c for c in topk_outcomes.columns if "Décès" in c or c == "Death_hospit"
+    ]
+
+    death_df = topk_outcomes[["source"] + death_cols].melt(
+        id_vars="source", var_name="death_type", value_name="death_status"
+    )
+    # Keep numeric prefix for ordering but create clean label for x-axis
+    death_df["death_order"] = death_df["death_type"].apply(
+        lambda x: int(re.match(r"^(\d+)", x).group(1)) + 1  # type: ignore
+        if re.match(r"^(\d+)", x)
+        else 0
+    )
+    death_df["death_label"] = (
+        death_df["death_type"]
+        .apply(lambda x: re.sub(r"^\d+\s*-\s*", "", x))
+        .str.replace("Décès à", "Death within")
+        .str.replace("Death_hospit", "Death during hospitalization")
+        .str.replace("jours", "days")
+    )
+
+    # Aggregate for chart
+    death_agg = (
+        death_df.groupby(["death_order", "death_label", "death_status"])["source"]
+        .nunique()
+        .reset_index(name="count")
+    )
+    total = (
+        death_agg.groupby(["death_order", "death_label"])["count"]
+        .sum()
+        .reset_index(name="total")
+    )
+    death_agg = death_agg.merge(total, on=["death_order", "death_label"])
+    death_agg["total"] = total_note
+    death_agg["perc"] = death_agg["count"] / death_agg["total"]
+    death_agg = death_agg[death_agg["death_status"] == 1]
+
+    # --- Death outcomes chart ---
+    death_chart = (
+        alt.Chart(death_agg, title="Death")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "death_label:N",
+                title="",
+                sort=alt.EncodingSortField(field="death_order", order="ascending"),
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "perc:Q",
+                title="Percentage of Deaths",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            # color=alt.Color("death_label:N", legend=None),
+            tooltip=[
+                alt.Tooltip("death_label:N", title="Type"),
+                alt.Tooltip("count:Q", title="Number of Deaths"),
+                alt.Tooltip("total:Q", title="Total Note"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+            ],
+        )
+        .properties(height=300, width=250)
+    )
+
+    # --- Length of stay chart (filtered) ---
+    length_chart = (
+        alt.Chart(topk_outcomes, title="Length of hospitalization")
+        .transform_aggregate(
+            unique_length_of_stay="mean(length_of_stay)",
+            groupby=["source"],
+        )
+        .mark_boxplot(extent=100)
+        .encode(
+            y=alt.Y(
+                "mean(unique_length_of_stay):Q",
+                title="Days",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ).scale(zero=False, domainMax=100, clamp=True),
+            color=alt.value("#1f77b4"),
+        )
+    ).properties(height=300, width=50)
+
+    # --- ICD-10 codes chart (filtered) ---
+    icd10_df = (
+        topk_outcomes[["source", "icd10_codes"]]
+        .explode("icd10_codes")
+        .drop_duplicates()
+    )
+    icd10_df["icd10_codes"] = icd10_df["icd10_codes"].str.split("|").str.get(1)
+    icd10_df = (
+        icd10_df.groupby("icd10_codes", as_index=False)["source"]
+        .nunique()
+        .sort_values("source", ascending=False)
+        .head(max_icd10)
+    )
+    icd10_df["total"] = total_note
+    icd10_df["perc"] = icd10_df["source"] / icd10_df["total"]
+    icd_chart = (
+        alt.Chart(icd10_df, title=f"Top {max_icd10} ICD-10 Codes")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "icd10_codes:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            tooltip=[
+                alt.Tooltip("icd10_codes:N", title="Code"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+            ],
+        )
+        .properties(height=300, width=300)
+    )
+
+    # --- Drugs chart (Filtered) ---
+
+    # Step 1: build reverse mapping {code -> label}
+    code_to_label = {
+        code: label for label, codes in treatment_config.items() for code in codes
+    }
+    drug_mapping = pd.DataFrame(
+        list(code_to_label.items()), columns=["label", "drug_name"]
+    )
+    filtered_df = topk_drugs.merge(drug_mapping, on="label")
+    filtered_df = filtered_df[["source", "drug_name"]].drop_duplicates()
+    filtered_df = (
+        filtered_df.groupby("drug_name", as_index=False)["source"]
+        .nunique()
+        .sort_values("source", ascending=False)
+    )
+    filtered_df["total"] = total_note
+    filtered_df["perc"] = filtered_df["source"] / filtered_df["total"]
+    filtered_drug_chart = (
+        alt.Chart(filtered_df, title="Filtered treatments in text")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "drug_name:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            tooltip=[
+                alt.Tooltip("drug_name:N", title="Drug"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+            ],
+        )
+        .properties(height=300, width=300)
+    )
+
+    # --- Drugs chart (TOP) ---
+    topk_drugs["label"] = topk_drugs["label"] + " : " + topk_drugs["label_name"]
+    drugs_df = topk_drugs[["source", "label"]].drop_duplicates()
+    drugs_df = (
+        drugs_df.groupby("label", as_index=False)["source"]
+        .nunique()
+        .sort_values("source", ascending=False)
+        .head(max_icd10)
+    )
+    drugs_df["total"] = total_note
+    drugs_df["perc"] = drugs_df["source"] / drugs_df["total"]
+    drug_chart = (
+        alt.Chart(drugs_df, title=f"Top {max_icd10} treatments in text")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "label:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            tooltip=[
+                alt.Tooltip("label:N", title="Code"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+            ],
+        )
+        .properties(height=300, width=300)
+    )
+
+    # --- Bio chart (Filtered) ---
+
+    # Step 1: build reverse mapping {code -> label}
+    code_to_label = {
+        code: label for label, codes in bio_config.items() for code in codes
+    }
+    bio_mapping = pd.DataFrame(
+        list(code_to_label.items()), columns=["label", "bio_name"]
+    )
+    filtered_df = topk_lab_tests.merge(bio_mapping, on="label")
+    filtered_df = filtered_df[
+        (filtered_df.positive_value.eq(True)) | (filtered_df.positive_text.eq(True))
+    ]
+    filtered_df = filtered_df[["source", "bio_name"]].drop_duplicates()
+    filtered_df = (
+        filtered_df.groupby("bio_name", as_index=False)["source"]
+        .nunique()
+        .sort_values("source", ascending=False)
+    )
+    filtered_df["total"] = total_note
+    filtered_df["perc"] = filtered_df["source"] / filtered_df["total"]
+    filtered_bio_chart = (
+        alt.Chart(filtered_df, title="Positive antibody in text")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "bio_name:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            tooltip=[
+                alt.Tooltip("bio_name:N", title="Laboratory test"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+            ],
+        )
+        .properties(height=300, width=300)
+    )
+
+    # --- Bio chart (TOP) ---
+    topk_lab_tests["label"] = (
+        topk_lab_tests["label"] + " : " + topk_lab_tests["norm_term"]
+    )
+    bio_df = topk_lab_tests[["source", "label"]].drop_duplicates()
+    bio_df = (
+        bio_df.groupby("label", as_index=False)["source"]
+        .nunique()
+        .sort_values("source", ascending=False)
+        .head(max_icd10)
+    )
+    bio_df["total"] = total_note
+    bio_df["perc"] = bio_df["source"] / bio_df["total"]
+    bio_chart = (
+        alt.Chart(bio_df, title=f"Top {max_icd10} laboratory tests in text")
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            y=alt.Y(
+                "label:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            tooltip=[
+                alt.Tooltip("label:N", title="Code"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+            ],
+        )
+        .properties(height=300, width=300)
+    )
+
+    return (
+        death_chart,
+        length_chart,
+        icd_chart,
+        drug_chart,
+        filtered_drug_chart,
+        bio_chart,
+        filtered_bio_chart,
+        wordclouds,
+    )
