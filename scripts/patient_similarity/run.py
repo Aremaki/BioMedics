@@ -65,6 +65,11 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                         / f"{note}.txt"
                     )
                     if raw_note_path.exists():
+                        # Create the folder if it does not exist
+                        (
+                            cohort_dir
+                            / f"top_similar_note_{case_file.name.split('.')[0]}"
+                        ).mkdir(exist_ok=True)
                         shutil.copy(
                             raw_note_path,
                             f"{cohort_dir}/top_similar_note_{case_file.name.split('.')[0]}/top_{rank+1}.txt",
