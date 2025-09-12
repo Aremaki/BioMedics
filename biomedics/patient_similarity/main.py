@@ -159,4 +159,4 @@ def process_and_sort_CRH_similarity(
     )
     distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
 
-    return distances_embedding, icd10_match
+    return distances_embedding, icd10_match, doc

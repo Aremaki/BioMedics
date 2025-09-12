@@ -1,3 +1,5 @@
+import pickle
+
 import typer
 from loguru import logger
 
@@ -27,16 +29,19 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
             clinical_text, cim10_codes, specialties = parse_clinical_case(case_file)
 
             if clinical_text:
-                distances_embedding, icd10_match = process_and_sort_CRH_similarity(
+                distances_embedding, icd10_match, doc = process_and_sort_CRH_similarity(
                     clinical_text,
                     specialties,
                     cohort_idx,
                     cim10_codes,
                     config_name=config_name,
-                )  # type: ignore
+                )
+
+                with open(f"{case_file}.pkl", "wb") as f_out:
+                    pickle.dump(doc, f_out)
                 distances_embedding.to_pickle(
                     f"{cohort_dir}/distances_{case_file.stem}.pkl"
-                )  # type: ignore
+                )
                 icd10_match.to_pickle(f"{cohort_dir}/icd10_match_{case_file.stem}.pkl")
 
 
