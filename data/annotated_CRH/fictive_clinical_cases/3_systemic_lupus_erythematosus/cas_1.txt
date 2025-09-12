@@ -79,4 +79,4 @@ N08.5 : Glomérulopathie dans les maladies systémiques
 ---Axes---
 Immunitaire
 Osteomusculaires
-Hemopathie
+Hemopathies

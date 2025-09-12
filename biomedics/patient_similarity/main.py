@@ -124,7 +124,7 @@ def process_and_sort_CRH_similarity(
 
     source_patient = create_source_terms(doc, selected_specialties, text_preprocessor)
     if not source_patient or not selected_specialties:
-        return None
+        raise ValueError("No valid source patient or specialties found.")
 
     predicted_entities = [
         text_preprocessor(

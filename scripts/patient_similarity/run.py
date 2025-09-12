@@ -36,8 +36,7 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     cim10_codes,
                     config_name=config_name,
                 )
-
-                with open(f"{case_file}.pkl", "wb") as f_out:
+                with open(case_file.with_suffix(".pkl"), "wb") as f_out:
                     pickle.dump(doc, f_out)
                 distances_embedding.to_pickle(
                     f"{cohort_dir}/distances_{case_file.stem}.pkl"
