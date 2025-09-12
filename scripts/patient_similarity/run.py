@@ -61,6 +61,7 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                         / "data"
                         / "study_cortico_GF"
                         / disease_index[cohort_dir.name]
+                        / "raw_CRH"
                         / f"{note}.txt"
                     )
                     if raw_note_path.exists():
