@@ -1,4 +1,5 @@
 import pickle
+import shutil
 
 import typer
 from loguru import logger
@@ -19,7 +20,12 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
     cohort_dirs = [
         d for d in data_path.iterdir() if d.is_dir() and d.name.split("_")[0].isdigit()
     ]
-
+    disease_index = {
+        "0_takayasu_arteritis": "maladie_de_takayasu",
+        "1_systemic_sclerosis": "sclerodermie_systemique",
+        "2_antiphospholipid_syndrome": "syndrome_des_anti_phospholipides",
+        "3_systemic_lupus_erythematosus": "lupus_erythemateux_dissemine",
+    }
     for cohort_dir in cohort_dirs:
         cohort_idx = int(cohort_dir.name.split("_")[0])
         logger.info(f"Processing cohort: {cohort_dir.name}")
@@ -41,6 +47,27 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                 distances_embedding.to_pickle(
                     f"{cohort_dir}/distances_{case_file.stem}.pkl"
                 )
+                top_similar_notes = (
+                    distances_embedding["source"]
+                    .str.split(".")
+                    .str[0]
+                    .head(100)
+                    .tolist()
+                )
+                for rank, note in enumerate(top_similar_notes):
+                    # copy note from folder with raw CRH to cohort_dir
+                    raw_note_path = (
+                        BASE_DIR
+                        / "data"
+                        / "study_cortico_GF"
+                        / disease_index[cohort_dir.name]
+                        / f"{note}.txt"
+                    )
+                    if raw_note_path.exists():
+                        shutil.copy(
+                            raw_note_path,
+                            f"{cohort_dir}/top_similar_note_{case_file.name.split('.')[0]}/top_{rank+1}.txt",
+                        )
                 icd10_match.to_pickle(f"{cohort_dir}/icd10_match_{case_file.stem}.pkl")
 
 
