@@ -1,6 +1,7 @@
 import random
 import re
 import warnings
+from collections import Counter
 from pathlib import Path
 
 import altair as alt
@@ -510,15 +511,19 @@ def plot_word_embeddings(sample_embed_with_lab):
 
 # Function to generate a word cloud
 def _generate_wordcloud(term_list, title):
-    text = " ".join(term_list)  # Convert list to a space-separated string
+    # Make a dictionary {text: count}
+    count_dict = dict(Counter(term_list))
+    # Clean keys: remove newlines and strip spaces
+    count_dict = {str(k).replace("\n", " ").strip(): v for k, v in count_dict.items()}
+
     wordcloud = WordCloud(
-        width=800, height=400, background_color="black", colormap="cool"
-    ).generate(text)
+        width=800, height=400, background_color="white", colormap="cool"
+    ).generate_from_frequencies(count_dict)
 
     plt.figure(figsize=(6, 3))
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
-    plt.title(title, fontsize=14, color="white")
+    plt.title(title, fontsize=14, color="black")
     plt.show()
 
 

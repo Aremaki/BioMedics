@@ -163,6 +163,7 @@ def compute_save_treatments_lab_tests_outcomes(sql, config):
                 "death_date",
             ],
             as_index=False,
+            dropna=False,
         ).agg({"icd10_codes": lambda x: list(set(x))})
 
         outcome_df["Death_hospit"] = (outcome_df["mode_sortie"] == "6-DC").astype(int)
@@ -178,7 +179,6 @@ def compute_save_treatments_lab_tests_outcomes(sql, config):
             outcome_df["death_date"] - outcome_df["start_date"]
             < pd.Timedelta(180, "day")
         ).astype(int)
-        outcome_df["label_stay"] = ""
 
         patient_drugs.to_pickle(f"{output_dir}/treatments.pkl")
         outcome_df.to_pickle(f"{output_dir}/outcomes.pkl")
