@@ -937,11 +937,14 @@ def stratified_sample_indices(
     # 1) bucketize into groups of size m
     buckets = []
     bucket_probs = []
+    bucket_probs_unique = []
     for i, start in enumerate(range(0, N, m)):
         end = min(start + m, N)
         bucket_size = end - start
         buckets.extend([i] * bucket_size)
-        bucket_probs.extend([distances["proba"][start:end].mean()] * bucket_size)
+        bucket_prob = distances["proba"][start:end].mean()
+        bucket_probs_unique.append(bucket_prob)
+        bucket_probs.extend([bucket_prob] * bucket_size)
     distances["bucket"] = buckets
     distances["bucket_prob"] = bucket_probs
     # check bucket prob sum is one
@@ -951,7 +954,9 @@ def stratified_sample_indices(
         distances.bucket_prob.sum()
     )
     # 3) pick buckets with replacement m times
-    picks = rng.choice(distances["bucket"].max(), size=m, replace=True, p=bucket_probs)
+    picks = rng.choice(
+        range(distances["bucket"].max()), size=m, replace=True, p=bucket_probs_unique
+    )
     picks_freq = {i: 0 for i in range(distances["bucket"].max())}
     for p in picks:
         picks_freq[p] += 1
