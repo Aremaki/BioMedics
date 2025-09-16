@@ -955,9 +955,12 @@ def stratified_sample_indices(
     )
     # 3) pick buckets with replacement m times
     picks = rng.choice(
-        range(distances["bucket"].max()), size=m, replace=True, p=bucket_probs_unique
+        range(distances["bucket"].max() + 1),
+        size=m,
+        replace=True,
+        p=bucket_probs_unique,
     )
-    picks_freq = {i: 0 for i in range(distances["bucket"].max())}
+    picks_freq = {i: 0 for i in range(distances["bucket"].max() + 1)}
     for p in picks:
         picks_freq[p] += 1
 
