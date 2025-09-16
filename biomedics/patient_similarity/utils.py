@@ -938,11 +938,10 @@ def stratified_sample_indices(
     buckets = []
     bucket_probs = []
     for i, start in enumerate(range(0, N, m)):
-        bucket_size = min(start + m, N)
+        end = min(start + m, N)
+        bucket_size = end - start
         buckets.extend([i] * bucket_size)
-        bucket_probs.extend(
-            [distances["proba"][start:bucket_size].mean()] * bucket_size
-        )
+        bucket_probs.extend([distances["proba"][start:end].mean()] * bucket_size)
     distances["bucket"] = buckets
     distances["bucket_prob"] = bucket_probs
     # check bucket prob sum is one
