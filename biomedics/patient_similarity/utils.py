@@ -168,8 +168,8 @@ def compute_distance(
         ["source", "labels", "normalized_term"]
     ).size()
     distances = {selected_label: [] for selected_label in selected_labels}
-    distances["total"] = []
     distances["mean"] = []
+    distances["source"] = []
     for source in tqdm(
         sources,
         desc="Computing distances",

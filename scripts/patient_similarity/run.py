@@ -4,6 +4,7 @@ from pathlib import Path
 
 import edsnlp
 import typer
+from confection import Config
 from loguru import logger
 
 from biomedics import BASE_DIR
@@ -19,6 +20,8 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
     Main function to process clinical cases and find similar patients.
     """
     data_path = BASE_DIR / "data" / "annotated_CRH" / "fictive_clinical_cases"
+    config_path = BASE_DIR / "configs" / "end2end" / config_name
+    config = Config().from_disk(config_path, interpolate=True)
     cohort_dirs = [
         d for d in data_path.iterdir() if d.is_dir() and d.name.split("_")[0].isdigit()
     ]
@@ -62,18 +65,17 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     .str[0]
                     .tolist()
                 )
+
                 # Create directory for BRAT annotations
-                MIE_folder_annotated = Path(
-                    f"/export/home/cse200093/brat_data/BioMedics/MIE_annotated/{case_file.name.split('.')[0]}"
+                brat_data_path = Path(config["group_brat"]["conf_path"])
+                MIE_folder_annotated = (
+                    brat_data_path / "MIE_annotated" / case_file.name.split(".")[0]
                 )
-                MIE_folder = Path(
-                    f"/export/home/cse200093/brat_data/BioMedics/MIE/{case_file.name.split('.')[0]}"
-                )
+                MIE_folder = brat_data_path / "MIE" / case_file.name.split(".")[0]
                 MIE_folder_annotated.mkdir(exist_ok=True)
                 MIE_folder.mkdir(exist_ok=True)
 
                 # Convert Doc to BRAT format
-                brat_data_path = Path("/export/home/cse200093/brat_data/BioMedics")
                 shutil.copy(
                     brat_data_path / "annotation.conf",
                     MIE_folder_annotated / "annotation.conf",
@@ -149,7 +151,11 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                 (MIE_folder / "fictive_case.ann").touch()
 
                 # Copy BRAT note from folder in brat_data
-                brat_note_path = brat_data_path / f"{disease_index[cohort_dir.name]}"
+                brat_note_path = (
+                    brat_data_path
+                    / "study_cortico_GF"
+                    / f"{disease_index[cohort_dir.name]}"
+                )
                 for note in note_to_annotate:
                     # Search for the note file in all the directries
                     for sub_folder in brat_note_path.iterdir():
