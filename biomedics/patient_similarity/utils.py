@@ -167,7 +167,9 @@ def compute_distance(
     selected_patients = selected_patients.groupby(
         ["source", "labels", "normalized_term"]
     ).size()
-    distances = {}
+    distances = {selected_label: [] for selected_label in selected_labels}
+    distances["total"] = []
+    distances["mean"] = []
     for source in tqdm(
         sources,
         desc="Computing distances",
@@ -177,6 +179,7 @@ def compute_distance(
         selected_patient = selected_patients[source]
         if set(selected_patient.keys().get_level_values(0)) >= set(selected_labels):
             distance = 0
+            distances["source"].append(source)
             for selected_label in selected_labels:
                 vector = vectorizer.fit_transform(
                     [
@@ -203,13 +206,12 @@ def compute_distance(
                     track_time=False,
                     verbose=False,
                 )
+                distances[selected_label].append(label_distance)
                 distance += label_distance  # type: ignore
-            distances[source] = distance / len(selected_labels)
+            distances["mean"].append(distance / len(selected_labels))
 
     # convert to pandas dataframe
-    distances = pd.DataFrame(
-        distances.items(), columns=["source", "similarity_distance"]
-    )
+    distances = pd.DataFrame(distances)
 
     return distances
 
@@ -908,3 +910,59 @@ def plot_output_outcomes(
         filtered_bio_chart,
         wordclouds,
     )
+
+
+# -------------------------
+#  Stevens stratified sampling
+# -------------------------
+def stratified_sample_indices(
+    distances: pd.DataFrame, m: int = 10, seed: int = 42
+) -> pd.DataFrame:
+    """
+    weights: prior over documents (length N), sums to 1.
+    m: desired sample size (e.g., 10)
+    Returns:
+      - selected_indices: list of sampled document indices (length <= m, ideally m unique)
+      - bucket_inclusion_probs: array of 'g' for each bucket (sum of bucket weights)
+      - buckets: list of (start_idx, end_idx) tuples (ranges in the sorted order)
+    Implementation choices follow the paper's description:
+      - sort items by weight descending
+      - create buckets of size m
+      - sample buckets with replacement m times with prob proportional to bucket weight sum
+      - from each picked bucket pick one document uniformly at random without replacement inside that bucket
+    We return indices w.r.t. the original order (weights input).
+    """
+    rng = np.random.default_rng(seed)
+    N = len(distances)
+    # 1) bucketize into groups of size m
+    buckets = []
+    bucket_probs = []
+    for i, start in enumerate(range(0, N, m)):
+        bucket_size = min(start + m, N)
+        buckets.extend([i] * bucket_size)
+        bucket_probs.extend(
+            [distances["proba"][start:bucket_size].mean()] * bucket_size
+        )
+    distances["bucket"] = buckets
+    distances["bucket_prob"] = bucket_probs
+    # check bucket prob sum is one
+    assert np.isclose(
+        distances.bucket_prob.sum(), 1.0
+    ), "Bucket probabilities do not sum to 1 but sum to {}".format(
+        distances.bucket_prob.sum()
+    )
+    # 3) pick buckets with replacement m times
+    picks = rng.choice(distances["bucket"].max(), size=m, replace=True, p=bucket_probs)
+    picks_freq = {i: 0 for i in range(distances["bucket"].max())}
+    for p in picks:
+        picks_freq[p] += 1
+
+    # 4) from each picked bucket, sample uniformly without replacement
+    distances["chosen"] = False
+    for bucket, freq in picks_freq.items():
+        if freq > 0:
+            bucket_distance = distances[distances.bucket == bucket]
+            chosen = rng.choice(range(len(bucket_distance)), size=freq, replace=False)
+            chosen_sources = bucket_distance.iloc[chosen].source
+            distances.loc[distances.source.isin(chosen_sources), "chosen"] = True
+    return distances

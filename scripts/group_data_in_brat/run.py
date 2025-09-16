@@ -4,7 +4,7 @@ os.environ["OMP_NUM_THREADS"] = "16"
 
 import shutil
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import edsnlp
 import numpy as np
@@ -22,13 +22,13 @@ def group_brat(
     *,
     input_dirs: List[Path],
     conf_path: Path,
-    output_dirs: List[Path] = None,
+    output_dirs: Optional[List[Path]] = None,
 ):
     np.random.seed(42)
 
     if not output_dirs:
         output_dirs = [
-            f"export/home/brat_data/test_demo/test_{i+1}"
+            Path(f"export/home/brat_data/test_demo/test_{i+1}")
             for i in range(len(input_dirs))
         ]
     for input_dir, output_dir in zip(input_dirs, output_dirs):
@@ -109,8 +109,8 @@ def group_brat(
         res_df = pd.concat([res_df, res_drug_df, res_diso_df])
 
         # Load NER data
-        doc_list = BratConnector(Path(input_dir)).brat2docs(edsnlp.blank("eds"))
-        docs = edsnlp.data.from_iterable(doc_list)
+        doc_list = BratConnector(Path(input_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore
+        docs = edsnlp.data.from_iterable(doc_list)  # type: ignore
 
         # Add Annotations
         if not Span.has_extension("note"):
@@ -177,7 +177,7 @@ def group_brat(
                     f"{conf_path}/visual.conf",
                     f"{sub_output_dir}/visual.conf",
                 )
-                edsnlp.data.write_standoff(
+                edsnlp.data.write_standoff(  # type: ignore
                     sub_docs,
                     sub_output_dir,
                     overwrite=True,
@@ -206,7 +206,7 @@ def group_brat(
                 f"{conf_path}/visual.conf",
                 f"{output_dir}/visual.conf",
             )
-            edsnlp.data.write_standoff(
+            edsnlp.data.write_standoff(  # type: ignore
                 all_docs,
                 output_dir,
                 overwrite=True,

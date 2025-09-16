@@ -4,7 +4,7 @@ import shutil
 
 import edsnlp
 import pandas as pd
-from edstoolbox import SparkApp
+from edstoolbox import SparkApp  # type: ignore
 from spacy.tokens import Span
 from tqdm import tqdm
 
@@ -83,9 +83,9 @@ def main(spark, sql, config):
     for i in [1, 2]:
         print(f"Processing PART {i}")
         docs = BratConnector(script_config[f"result_ner_part_{i}"]).brat2docs(
-            edsnlp.blank("eds")
+            edsnlp.blank("eds")  # type: ignore
         )
-        docs = edsnlp.data.from_iterable(docs)
+        docs = edsnlp.data.from_iterable(docs)  # type: ignore
 
         # Define relation extraction schema
         print(f"Relation extraction PART {i}")
@@ -169,7 +169,7 @@ def main(spark, sql, config):
                 os.path.join(brat_dir, config_file),
             )
 
-        edsnlp.data.write_standoff(
+        edsnlp.data.write_standoff(  # type: ignore
             docs_predicted,
             brat_dir,
             overwrite=True,
@@ -202,8 +202,8 @@ def main(spark, sql, config):
             os.path.join(sample_brat_dir, config_file),
         )
 
-    edsnlp.data.write_standoff(
-        list(docs)[:100],
+    edsnlp.data.write_standoff(  # type: ignore
+        list(docs)[:100],  # type: ignore
         sample_brat_dir,
         overwrite=True,
         span_getter=["*"],

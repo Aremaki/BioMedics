@@ -20,6 +20,7 @@ from biomedics.patient_similarity.utils import (
     add_label_class,
     compute_distance,
     create_source_terms,
+    stratified_sample_indices,
 )
 
 warnings.filterwarnings("ignore")
@@ -154,10 +155,15 @@ def process_and_sort_CRH_similarity(
         vectorizer,
         selected_specialties,
     )
+
+    # Normalize cosine scores into a probability distribution
+    distances_embedding["proba"] = 1 - distances_embedding["mean"]
+    distances_embedding["proba"] /= distances_embedding["proba"].sum()
+
     # Add a column with rank value
-    distances_embedding = distances_embedding.sort_values(
-        by="similarity_distance", ascending=True
-    )
+    distances_embedding = distances_embedding.sort_values(by="proba", ascending=False)
     distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
+
+    distances_embedding = stratified_sample_indices(distances_embedding, m=10, seed=42)
 
     return distances_embedding, icd10_match, doc
