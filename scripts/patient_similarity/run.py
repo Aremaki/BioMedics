@@ -72,6 +72,11 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     brat_data_path / "MIE_annotated" / case_file.name.split(".")[0]
                 )
                 MIE_folder = brat_data_path / "MIE" / case_file.name.split(".")[0]
+                # Delete and recreate the folders if they already exist
+                if MIE_folder_annotated.exists():
+                    shutil.rmtree(MIE_folder_annotated)
+                if MIE_folder.exists():
+                    shutil.rmtree(MIE_folder)
                 MIE_folder_annotated.mkdir(parents=True, exist_ok=True)
                 MIE_folder.mkdir(parents=True, exist_ok=True)
 
@@ -188,22 +193,22 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                             # Add text at the end of the file to indicate the rank, the distances
                             with open(MIE_folder_annotated / f"{note}.txt", "a") as f:
                                 f.write(
-                                    f"\n\n# Similarity rank: {distances_embedding[distances_embedding.source.str.startswith(note)]['rank'].values[0]}\n"
+                                    f"\n\n# Similarity rank: {distances_embedding[distances_embedding['source'] == note + '.ann']['rank'].values[0]}\n"
                                 )
                                 # Add similarity distance for each selected label
                                 for specialty in specialties:  # type: ignore
                                     if specialty in distances_embedding.columns:
                                         f.write(
-                                            f"# Similarity distance ({specialty}): {distances_embedding[distances_embedding.source.str.startswith(note)][specialty].values[0]}\n"
+                                            f"# Similarity distance ({specialty}): {distances_embedding[distances_embedding['source'] == note + '.ann'][specialty].values[0]}\n"
                                         )
                                 f.write(
-                                    f"# Mean distance: {distances_embedding[distances_embedding.source.str.startswith(note)]['mean'].values[0]}\n"
+                                    f"# Mean distance: {distances_embedding[distances_embedding['source'] == note + '.ann']['mean'].values[0]}\n"
                                 )
                                 f.write(
-                                    f"# Proba: {distances_embedding[distances_embedding.source.str.startswith(note)]['proba'].values[0]}\n"
+                                    f"# Proba: {distances_embedding[distances_embedding['source'] == note + '.ann']['proba'].values[0]}\n"
                                 )
                                 f.write(
-                                    f"# Bucket: {distances_embedding[distances_embedding.source.str.startswith(note)]['bucket'].values[0]}\n"
+                                    f"# Bucket: {distances_embedding[distances_embedding['source'] == note + '.ann']['bucket'].values[0]}\n"
                                 )
                             shutil.copy(note_path, MIE_folder / f"{note}.txt")
                             shutil.copy(ann_path, MIE_folder_annotated / f"{note}.ann")
