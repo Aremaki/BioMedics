@@ -157,6 +157,10 @@ def process_and_sort_CRH_similarity(
         selected_specialties,
     )
 
+    # Add a column with rank value
+    distances_embedding = distances_embedding.sort_values(by="mean", ascending=True)
+    distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
+
     # Normalize cosine scores into a probability distribution
     distances_embedding["proba_cosine"] = 1 - distances_embedding["mean"]
     distances_embedding["proba_cosine"] /= distances_embedding["proba_cosine"].sum()
@@ -167,10 +171,6 @@ def process_and_sort_CRH_similarity(
         Z / distances_embedding["rank"]
     )
     distances_embedding["proba"] /= distances_embedding["proba"].sum()
-
-    # Add a column with rank value
-    distances_embedding = distances_embedding.sort_values(by="proba", ascending=False)
-    distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
 
     distances_embedding = stratified_sample_indices(distances_embedding, m=10, seed=42)
 
