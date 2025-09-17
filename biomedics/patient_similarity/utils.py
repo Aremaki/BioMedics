@@ -942,16 +942,16 @@ def stratified_sample_indices(
         end = min(start + m, N)
         bucket_size = end - start
         buckets.extend([i] * bucket_size)
-        bucket_prob = distances["proba"][start:end].mean()
+        bucket_prob = distances["proba"][start:end].sum()
         bucket_probs_unique.append(bucket_prob)
-        bucket_probs.extend([bucket_prob] * bucket_size)
+        bucket_probs.extend([bucket_prob / bucket_size] * bucket_size)
     distances["bucket"] = buckets
     distances["bucket_prob"] = bucket_probs
     # check bucket prob sum is one
     assert np.isclose(
-        distances.bucket_prob.sum(), 1.0
+        sum(bucket_probs_unique), 1.0
     ), "Bucket probabilities do not sum to 1 but sum to {}".format(
-        distances.bucket_prob.sum()
+        sum(bucket_probs_unique)
     )
     # 3) pick buckets with replacement m times
     picks = rng.choice(
