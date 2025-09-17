@@ -72,8 +72,8 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     brat_data_path / "MIE_annotated" / case_file.name.split(".")[0]
                 )
                 MIE_folder = brat_data_path / "MIE" / case_file.name.split(".")[0]
-                MIE_folder_annotated.mkdir(exist_ok=True)
-                MIE_folder.mkdir(exist_ok=True)
+                MIE_folder_annotated.mkdir(parents=True, exist_ok=True)
+                MIE_folder.mkdir(parents=True, exist_ok=True)
 
                 # Convert Doc to BRAT format
                 shutil.copy(
@@ -204,7 +204,7 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                         (
                             cohort_dir
                             / f"top_similar_note_{case_file.name.split('.')[0]}"
-                        ).mkdir(exist_ok=True)
+                        ).mkdir(parents=True, exist_ok=True)
                         shutil.copy(
                             raw_note_path,
                             f"{cohort_dir}/top_similar_note_{case_file.name.split('.')[0]}/top_{rank+1}.txt",
