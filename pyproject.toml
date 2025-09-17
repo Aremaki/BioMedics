@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 # /!\ Do not hesitate to adjust python's version to fit your training and deployment environments
 python = ">3.7.6,<3.8.0"
-edsnlp = { version = "0.13.0", extras = ["ml"] }
+edsnlp = { git = "https://github.com/aphp/edsnlp.git", branch = "rule_based_relation", extras = ["ml"] }
 sentencepiece = "^0.1.96"
 altair = "^5.0"
 fsspec = "2022.7.1"
