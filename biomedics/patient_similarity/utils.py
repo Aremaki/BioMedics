@@ -932,18 +932,22 @@ def stratified_sample_indices(
     We return indices w.r.t. the original order (weights input).
     """
     rng = np.random.default_rng(seed)
+    N_k = len(distances[distances["proba"] > 0])
     N = len(distances)
     # 1) bucketize into groups of size m
     buckets = []
     bucket_probs = []
     bucket_probs_unique = []
-    for i, start in enumerate(range(0, N, m)):
-        end = min(start + m, N)
+    for i, start in enumerate(range(0, N_k, m)):
+        end = min(start + m, N_k)
         bucket_size = end - start
         buckets.extend([i] * bucket_size)
         bucket_prob = distances["proba"][start:end].sum()
         bucket_probs_unique.append(bucket_prob)
         bucket_probs.extend([bucket_prob / bucket_size] * bucket_size)
+    buckets.extend([distances["bucket"].max() + 1] * (N - N_k))
+    bucket_probs.extend([0.0] * (N - N_k))
+    bucket_probs_unique.append(0.0)
     distances["bucket"] = buckets
     distances["bucket_prob"] = bucket_probs
     # check bucket prob sum is one
