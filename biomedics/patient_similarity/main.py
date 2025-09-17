@@ -202,15 +202,10 @@ def process_and_sort_CRH_similarity(
     )
 
     # Add AP score as another probability distribution
-    Z_1 = threshold
-    Z_2 = len(distances_embedding) - threshold
-    distances_embedding["proba"] = 0.0
-    distances_embedding.loc[distances_embedding["rank"] <= threshold, "proba"] = (
-        1.0 / (2.0 * Z_1)
-    ) * np.log(Z_1 / distances_embedding["rank"])
-    distances_embedding.loc[distances_embedding["rank"] > threshold, "proba"] = (
-        1.0 / (2.0 * Z_2)
-    ) * np.log(Z_2 / (distances_embedding["rank"] - threshold))
+    Z = len(distances_embedding)
+    distances_embedding["proba"] = (1.0 / (2.0 * Z)) * np.log(
+        Z / distances_embedding["rank"]
+    )
     proba_total_top = (
         distances_embedding[distances_embedding["rank"] <= threshold]["proba"].sum() * 2
     )
