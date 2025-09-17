@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import torch
 from confection import Config
+from kneed import KneeLocator
 from sklearn.feature_extraction import DictVectorizer
 from transformers import CamembertForSequenceClassification, CamembertTokenizer
 
@@ -161,16 +162,44 @@ def process_and_sort_CRH_similarity(
     distances_embedding = distances_embedding.sort_values(by="mean", ascending=True)
     distances_embedding["rank"] = range(1, len(distances_embedding) + 1)
 
+    # Determine the knee point to filter patients
+    x = distances_embedding["rank"].values
+    y = distances_embedding["mean"].values
+    kneedle = KneeLocator(
+        x,
+        y,
+        curve="concave",  # or "concave" depending on your plot
+        direction="increasing",  # or "increasing"
+    )
+    threshold = kneedle.knee
+    distances_embedding["threshold"] = threshold
+    distances_embedding["similar"] = distances_embedding["rank"] <= threshold
+
     # Normalize cosine scores into a probability distribution
-    distances_embedding["proba_cosine"] = 1 - distances_embedding["mean"]
-    distances_embedding["proba_cosine"] /= distances_embedding["proba_cosine"].sum()
+    distances_embedding["proba"] = 1 - distances_embedding["mean"]
+    proba_total_top = (
+        distances_embedding[distances_embedding["rank"] <= threshold]["proba"].sum()
+        * 0.5
+    )
+    proba_total_bottom = (
+        distances_embedding[distances_embedding["rank"] > threshold]["proba"].sum()
+        * 0.5
+    )
+    distances_embedding["proba"] = distances_embedding["proba"].mask(
+        distances_embedding["rank"] > threshold,
+        distances_embedding["proba"] / proba_total_bottom,
+    )
+    distances_embedding["proba"] = distances_embedding["proba"].mask(
+        distances_embedding["rank"] <= threshold,
+        distances_embedding["proba"] / proba_total_top,
+    )
 
     # Add AP score as another probability distribution
     Z = len(distances_embedding)
-    distances_embedding["proba"] = (1.0 / (2.0 * Z)) * np.log(
+    distances_embedding["proba_AP"] = (1.0 / (2.0 * Z)) * np.log(
         Z / distances_embedding["rank"]
     )
-    distances_embedding["proba"] /= distances_embedding["proba"].sum()
+    distances_embedding["proba_AP"] /= distances_embedding["proba_AP"].sum()
 
     distances_embedding = stratified_sample_indices(distances_embedding, m=10, seed=42)
 
