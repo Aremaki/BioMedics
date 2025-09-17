@@ -204,40 +204,34 @@ def process_and_sort_CRH_similarity(
     # Add AP score as another probability distribution
     Z_1 = threshold
     Z_2 = len(distances_embedding) - threshold
-    distances_embedding["proba_elbow"] = 0.0
-    distances_embedding.loc[distances_embedding["rank"] <= threshold, "proba_elbow"] = (
+    distances_embedding["proba"] = 0.0
+    distances_embedding.loc[distances_embedding["rank"] <= threshold, "proba"] = (
         1.0 / (2.0 * Z_1)
     ) * np.log(Z_1 / distances_embedding["rank"])
-    distances_embedding.loc[distances_embedding["rank"] > threshold, "proba_elbow"] = (
+    distances_embedding.loc[distances_embedding["rank"] > threshold, "proba"] = (
         1.0 / (2.0 * Z_2)
     ) * np.log(Z_2 / (distances_embedding["rank"] - threshold))
     proba_total_top = (
-        distances_embedding[distances_embedding["rank"] <= threshold][
-            "proba_elbow"
-        ].sum()
-        * 2
+        distances_embedding[distances_embedding["rank"] <= threshold]["proba"].sum() * 2
     )
     proba_total_bottom = (
-        distances_embedding[distances_embedding["rank"] > threshold][
-            "proba_elbow"
-        ].sum()
-        * 2
+        distances_embedding[distances_embedding["rank"] > threshold]["proba"].sum() * 2
     )
-    distances_embedding["proba_elbow"] = distances_embedding["proba_elbow"].mask(
+    distances_embedding["proba"] = distances_embedding["proba"].mask(
         distances_embedding["rank"] > threshold,
-        distances_embedding["proba_elbow"] / proba_total_bottom,
+        distances_embedding["proba"] / proba_total_bottom,
     )
-    distances_embedding["proba_elbow"] = distances_embedding["proba_elbow"].mask(
+    distances_embedding["proba"] = distances_embedding["proba"].mask(
         distances_embedding["rank"] <= threshold,
-        distances_embedding["proba_elbow"] / proba_total_top,
+        distances_embedding["proba"] / proba_total_top,
     )
 
     # Add AP score as another probability distribution
     Z = len(distances_embedding)
-    distances_embedding["proba"] = (1.0 / (2.0 * Z)) * np.log(
+    distances_embedding["proba_AP"] = (1.0 / (2.0 * Z)) * np.log(
         Z / distances_embedding["rank"]
     )
-    distances_embedding["proba"] /= distances_embedding["proba"].sum()
+    distances_embedding["proba_AP"] /= distances_embedding["proba_AP"].sum()
 
     distances_embedding = stratified_sample_indices(
         distances_embedding, m=10, seed=seed
