@@ -178,12 +178,10 @@ def process_and_sort_CRH_similarity(
     # Normalize cosine scores into a probability distribution
     distances_embedding["proba"] = 1 - distances_embedding["mean"]
     proba_total_top = (
-        distances_embedding[distances_embedding["rank"] <= threshold]["proba"].sum()
-        * 0.5
+        distances_embedding[distances_embedding["rank"] <= threshold]["proba"].sum() * 2
     )
     proba_total_bottom = (
-        distances_embedding[distances_embedding["rank"] > threshold]["proba"].sum()
-        * 0.5
+        distances_embedding[distances_embedding["rank"] > threshold]["proba"].sum() * 2
     )
     distances_embedding["proba"] = distances_embedding["proba"].mask(
         distances_embedding["rank"] > threshold,
