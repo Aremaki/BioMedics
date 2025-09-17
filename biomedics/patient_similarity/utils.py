@@ -512,7 +512,7 @@ def plot_word_embeddings(sample_embed_with_lab):
 
 
 # Function to generate a word cloud
-def _generate_wordcloud(term_list, title):
+def _generate_wordcloud(term_list):
     # Make a dictionary {text: count}
     count_dict = dict(Counter(term_list))
     # Clean keys: remove newlines and strip spaces
@@ -537,7 +537,7 @@ def generate_wordcloud(target_patients, selected_specialties, most_similar_patie
     # Generate word clouds
     plt.style.use("dark_background")  # Dark theme for better contrast
     for label in terms_by_label.keys():
-        _generate_wordcloud(terms_by_label[label]["normalized_term"], label)
+        _generate_wordcloud(terms_by_label[label]["normalized_term"])
 
 
 def parse_clinical_case(file_path: Path):
@@ -610,9 +610,8 @@ def plot_output_outcomes(
     )
     # Generate word clouds
     for label in disorder_df.keys():
-        wordclouds.append(
-            _generate_wordcloud(disorder_df[label]["normalized_term"], label)
-        )
+        wordcloud = _generate_wordcloud(disorder_df[label]["normalized_term"])
+        wordclouds.append((label, wordcloud))
 
     # --- Death dataframe ---
     death_cols = [
