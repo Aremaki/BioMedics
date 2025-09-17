@@ -34,6 +34,7 @@ def process_and_sort_CRH_similarity(
     cohort_idx,
     cim10_codes,
     config_name: str = "config_study_cortico_v1.cfg",
+    seed: int = 42,
 ):
     """
     Processes a medical text to find similar patients.
@@ -199,6 +200,8 @@ def process_and_sort_CRH_similarity(
     )
     distances_embedding["proba_AP"] /= distances_embedding["proba_AP"].sum()
 
-    distances_embedding = stratified_sample_indices(distances_embedding, m=10, seed=42)
+    distances_embedding = stratified_sample_indices(
+        distances_embedding, m=10, seed=seed
+    )
 
     return distances_embedding, icd10_match, doc

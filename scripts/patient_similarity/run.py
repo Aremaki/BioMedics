@@ -46,6 +46,11 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     cohort_idx,
                     cim10_codes,
                     config_name=config_name,
+                    seed=int(
+                        case_file.name.split(".")[0].split("_")[
+                            -1
+                        ],  # Use case number as seed
+                    ),
                 )
                 with open(case_file.with_suffix(".pkl"), "wb") as f_out:
                     pickle.dump(doc, f_out)
