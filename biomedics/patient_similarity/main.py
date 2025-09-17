@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 
 import edsnlp
+import numpy as np
 import pandas as pd
 import torch
 from confection import Config
@@ -157,7 +158,14 @@ def process_and_sort_CRH_similarity(
     )
 
     # Normalize cosine scores into a probability distribution
-    distances_embedding["proba"] = 1 - distances_embedding["mean"]
+    distances_embedding["proba_cosine"] = 1 - distances_embedding["mean"]
+    distances_embedding["proba_cosine"] /= distances_embedding["proba_cosine"].sum()
+
+    # Add AP score as another probability distribution
+    Z = len(distances_embedding)
+    distances_embedding["proba"] = (1.0 / (2.0 * Z)) * np.log(
+        Z / distances_embedding["rank"]
+    )
     distances_embedding["proba"] /= distances_embedding["proba"].sum()
 
     # Add a column with rank value
