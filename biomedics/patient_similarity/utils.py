@@ -945,7 +945,7 @@ def stratified_sample_indices(
         bucket_prob = distances["proba"][start:end].sum()
         bucket_probs_unique.append(bucket_prob)
         bucket_probs.extend([bucket_prob / bucket_size] * bucket_size)
-    buckets.extend([distances["bucket"].max() + 1] * (N - N_k))
+    buckets.extend([max(buckets) + 1] * (N - N_k))
     bucket_probs.extend([0.0] * (N - N_k))
     bucket_probs_unique.append(0.0)
     distances["bucket"] = buckets
