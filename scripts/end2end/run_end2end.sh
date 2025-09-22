@@ -1,6 +1,15 @@
 #!/bin/bash
 source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
 
+# Set config file path (override with first arg or existing env var `config`)
+config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
+export config
+
+# Ensure logs directory exists for SLURM and other logs
+mkdir -p logs
+
+echo "Using config: $config"
+
 
 #######################
 ## NER + Qualif
@@ -50,7 +59,7 @@ echo "Job $JOB_ID finished. Continuing..."
 ## Extract Measurement
 #######################
 
-eds-toolbox spark submit --config ../../configs/end2end/config_study_cortico_v1.cfg --log-path logs/ ../extract_measurement/run.py
+eds-toolbox spark submit --config "$config" --log-path logs/ ../extract_measurement/run.py
 
 
 #######################
@@ -142,7 +151,7 @@ echo "Job $JOB_ID finished."
 ## FETCH OUTCOMES
 #######################
 
-eds-toolbox spark submit --config ../../configs/end2end/config_study_cortico_v1.cfg --log-path logs/ ../treatments_lab_tests_outcomes/run.py
+eds-toolbox spark submit --config "$config" --log-path logs/ ../treatments_lab_tests_outcomes/run.py
 
 #######################
 ## GROUP ALL IN BRAT

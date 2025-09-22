@@ -2,7 +2,6 @@ import pickle
 import shutil
 from pathlib import Path
 
-import edsnlp
 import typer
 from confection import Config
 from loguru import logger
@@ -73,6 +72,9 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
 
                 # Create directory for BRAT annotations
                 brat_data_path = Path(config["group_brat"]["conf_path"])
+                fictive_case_dir = (
+                    brat_data_path / "fictive_clinical_cases" / cohort_dir.name
+                )
                 MIE_folder_annotated = (
                     brat_data_path / "MIE_annotated" / case_file.name.split(".")[0]
                 )
@@ -110,78 +112,23 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
                     brat_data_path / "visual.conf",
                     MIE_folder / "visual.conf",
                 )
-                # Add Relation
-                scheme = {
-                    "source": [{"label": "Chemical_and_drugs", "attr": None}],
-                    "target": [
-                        {"label": "dosage", "attr": None},
-                        {"label": "strength", "attr": None},
-                        {"label": "form", "attr": None},
-                        {"label": "Frequency", "attr": None},
-                    ],
-                    "type": "Depend",
-                    "inv_type": "inv_Depend",
-                }
-
-                nlp = edsnlp.blank("eds")
-
-                # Extraction of entities
-                nlp.add_pipe("eds.sentences")
-                nlp.add_pipe(
-                    "eds.relations",
-                    config={
-                        "scheme": scheme,
-                        "use_sentences": True,
-                        "clean_rel": True,
-                        "proximity_method": "right",
-                        "max_dist": 40,
-                    },
-                )
-                doc = nlp(doc)
-                doc._.note_id = "fictive_case"
-                edsnlp.data.write_standoff(  # type: ignore
-                    [doc],
-                    MIE_folder_annotated,
-                    overwrite=True,
-                    span_getter=[
-                        "DISO",
-                        "Constantes",
-                        "BIO_comp",
-                        "Chemical_and_drugs",
-                        "dosage",
-                        "BIO",
-                        "strength",
-                        "form",
-                        "SECTION_antecedent",
-                        "SECTION_motif",
-                        "SECTION_histoire",
-                        "SECTION_examen_clinique",
-                        "SECTION_examen_complementaire",
-                        "SECTION_mode_de_vie",
-                        "SECTION_traitement_entree",
-                        "SECTION_antecedent_familiaux",
-                        "SECTION_traitement_sortie",
-                        "SECTION_conclusion",
-                        "Date",
-                        "Duration",
-                        "Frequency",
-                    ],
-                    span_attributes=[
-                        "Negation",
-                        "Family",
-                        "Temporality",
-                        "Certainty",
-                        "Action",
-                        "Allergie",
-                        "RefTemp",
-                        "AttDate",
-                    ],
-                )
 
                 # Copy case file to MIE folder
-                shutil.copy(case_file, MIE_folder / "fictive_case.txt")
+                shutil.copy(
+                    fictive_case_dir / f"case_{case_file.stem}.txt",
+                    MIE_folder / "fictive_case.txt",
+                )
                 (MIE_folder / "fictive_case.ann").touch()
 
+                # Copy case file to MIE annotated folder
+                shutil.copy(
+                    fictive_case_dir / f"case_{case_file.stem}.txt",
+                    MIE_folder_annotated / "fictive_case.txt",
+                )
+                shutil.copy(
+                    fictive_case_dir / f"case_{case_file.stem}.ann",
+                    MIE_folder_annotated / "fictive_case.ann",
+                )
                 # Copy BRAT note from folder in brat_data
                 brat_note_path = (
                     brat_data_path

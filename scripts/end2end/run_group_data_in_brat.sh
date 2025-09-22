@@ -13,10 +13,15 @@ cd "/export/home/cse200093/Adam/biomedics/scripts/group_data_in_brat"
 source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
 conda deactivate
 
+# Set config file path (override with first arg or existing env var `config`)
+config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
+export config
+echo "Using config: $config"
+
 echo -----------------
 echo GROUP ALL DATA IN BRAT
 echo -----------------
 
-python run.py --config ../../configs/end2end/config_study_cortico_v1.cfg
+python run.py --config "$config"
 
 echo ---------------

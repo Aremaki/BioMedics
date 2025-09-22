@@ -13,12 +13,17 @@ cd "/export/home/cse200093/Adam/biomedics/scripts/ner"
 source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
 conda deactivate
 
+# Set config file path (override with first arg or existing env var `config`)
+config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
+export config
+echo "Using config: $config"
+
 echo -----------------
 echo INFERENCE NER
 echo -----------------
 start_time="$(date -u +%s)"
 
-python infer.py --config ../../configs/end2end/config_study_cortico_v1.cfg
+python infer.py --config "$config"
 
 end_time="$(date -u +%s)"
 elapsed="$(($end_time-$start_time))"
