@@ -128,6 +128,28 @@ def add_label_class(doc, model, tokenizer, text_preprocessor, label_names, devic
     return doc
 
 
+def get_counts_for_source(df, source_name):
+    # filter by source
+    case_df = df[df["source"] == source_name].copy()
+
+    # explode labels
+    case_df["labels"] = case_df.labels.str.split(r" \| ")
+    case_df = case_df.explode("labels")
+    case_df = case_df[case_df["labels"].notna() & (case_df["labels"] != "")]
+
+    # group by (label, normalized_term) and count
+    grouped = (
+        case_df.groupby(["labels", "normalized_term"]).size().reset_index(name="count")
+    )
+
+    # build clean nested dict
+    return (
+        grouped.groupby("labels")
+        .apply(lambda g: dict(zip(g["normalized_term"], g["count"])))
+        .to_dict()
+    )
+
+
 def create_source_terms(doc, selected_labels, text_preprocessor):
     source_patient = {}
     for selected_label in selected_labels:
@@ -580,16 +602,9 @@ def parse_clinical_case(file_path: Path):
     return clinical_text, cim10_codes, sepcialities
 
 
-def plot_output_outcomes(
-    topk_outcomes,
-    topk_drugs,
-    topk_lab_tests,
+def plot_wordcloud(
     topk_disorder,
     specialties,
-    bio_config,
-    treatment_config,
-    total_note,
-    max_icd10=30,
 ):
     """
     Interactive Altair plots for outcomes:
@@ -612,7 +627,13 @@ def plot_output_outcomes(
     for label in disorder_df.keys():
         wordcloud = _generate_wordcloud(disorder_df[label]["normalized_term"])
         wordclouds.append((label, wordcloud))
+    return wordclouds
 
+
+def death_plot(
+    topk_outcomes,
+    total_note,
+):
     # --- Death dataframe ---
     death_cols = [
         c for c in topk_outcomes.columns if "Décès" in c or c == "Death_hospit"
@@ -677,8 +698,10 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=250)
     )
+    return death_chart
 
-    # --- Length of stay chart (filtered) ---
+
+def plot_length_chart(topk_outcomes):
     length_chart = (
         alt.Chart(topk_outcomes, title="Length of hospitalization")
         .transform_aggregate(
@@ -695,7 +718,10 @@ def plot_output_outcomes(
             color=alt.value("#1f77b4"),
         )
     ).properties(height=300, width=50)
+    return length_chart
 
+
+def plot_icd10_chart(topk_outcomes, total_note, max_icd10=30):
     # --- ICD-10 codes chart (filtered) ---
     icd10_df = (
         topk_outcomes[["source", "icd10_codes"]]
@@ -735,9 +761,10 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=300)
     )
+    return icd_chart
 
-    # --- Drugs chart (Filtered) ---
 
+def plot_drug_chart_filtered(topk_drugs, treatment_config, total_note):
     # Step 1: build reverse mapping {code -> label}
     code_to_label = {
         code: label for label, codes in treatment_config.items() for code in codes
@@ -778,8 +805,10 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=300)
     )
+    return filtered_drug_chart
 
-    # --- Drugs chart (TOP) ---
+
+def plot_drug_chart_topk(topk_drugs, total_note, max_icd10=30):
     topk_drugs["label"] = topk_drugs["label"] + " : " + topk_drugs["label_name"]
     drugs_df = topk_drugs[["source", "label"]].drop_duplicates()
     drugs_df = (
@@ -814,9 +843,10 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=300)
     )
+    return drug_chart
 
-    # --- Bio chart (Filtered) ---
 
+def plot_bio_chart_filtered(topk_lab_tests, bio_config, total_note):
     # Step 1: build reverse mapping {code -> label}
     code_to_label = {
         code: label for label, codes in bio_config.items() for code in codes
@@ -860,8 +890,10 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=300)
     )
+    return filtered_bio_chart
 
-    # --- Bio chart (TOP) ---
+
+def plot_bio_chart_topk(topk_lab_tests, total_note, max_icd10=30):
     topk_lab_tests["label"] = (
         topk_lab_tests["label"] + " : " + topk_lab_tests["norm_term"]
     )
@@ -898,6 +930,51 @@ def plot_output_outcomes(
         )
         .properties(height=300, width=300)
     )
+    return bio_chart
+
+
+def plot_all_charts(
+    topk_outcomes,
+    topk_drugs,
+    topk_lab_tests,
+    topk_disorder,
+    specialties,
+    bio_config,
+    treatment_config,
+    total_note,
+    max_icd10=30,
+):
+    """
+    Interactive Altair plots for outcomes:
+    - Length of stay (boxplot, filtered)
+    - Death outcomes (bar chart % with selection)
+    - Top ICD-10 codes (bar chart, filtered)
+    """
+
+    # Disorder word_cloud
+    wordclouds = plot_wordcloud(topk_disorder, specialties)
+
+    # --- Death dataframe ---
+    death_chart = death_plot(topk_outcomes, total_note)
+
+    # --- Length of stay chart (filtered) ---
+    length_chart = plot_length_chart(topk_outcomes)
+
+    # --- ICD-10 codes chart (filtered) ---
+    icd_chart = plot_icd10_chart(topk_outcomes, total_note, max_icd10)
+
+    # --- Drugs chart (Filtered) ---
+    filtered_drug_chart = plot_drug_chart_filtered(
+        topk_drugs, treatment_config, total_note
+    )
+
+    # --- Drugs chart (TOP) ---
+    drug_chart = plot_drug_chart_topk(topk_drugs, total_note, max_icd10)
+
+    # --- Bio chart (Filtered) ---
+    filtered_bio_chart = plot_bio_chart_filtered(topk_lab_tests, bio_config, total_note)
+    # --- Bio chart (TOP) ---
+    bio_chart = plot_bio_chart_topk(topk_lab_tests, total_note, max_icd10)
 
     return (
         death_chart,
