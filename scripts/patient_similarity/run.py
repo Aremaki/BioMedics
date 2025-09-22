@@ -40,16 +40,6 @@ def main(config_name: str = "config_study_cortico_v1.cfg"):
             clinical_text, cim10_codes, specialties = parse_clinical_case(case_file)
 
             if clinical_text:
-                # Save clinical text in "raw_CRH" folder with .ann blank file
-                raw_crh_folder = cohort_dir / "raw_CRH"
-                raw_crh_folder.mkdir(parents=True, exist_ok=True)
-                with open(raw_crh_folder / case_file.name, "w") as f:
-                    f.write(clinical_text)
-                with open(
-                    raw_crh_folder / case_file.with_suffix(".ann").name, "w"
-                ) as f:
-                    f.write("")
-
                 distances_embedding, icd10_match, doc = process_and_sort_CRH_similarity(
                     clinical_text,
                     specialties,
