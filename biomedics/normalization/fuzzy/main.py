@@ -136,8 +136,7 @@ class FuzzyNormaliser:
             )
             merged_df = merged_df[idx]
             common_cols = list(df_1.columns)
-            df_1[common_cols] = df_1[common_cols].astype(str)
-            merged_df[common_cols] = merged_df[common_cols].astype(str)
+            merged_df = merged_df.replace({float("nan"): None})
             merged_df = df_1.merge(merged_df, on=common_cols, how="left")
             self.df = merged_df
         if self.method == "jaro_winkler":
@@ -152,8 +151,7 @@ class FuzzyNormaliser:
             )
             merged_df = merged_df[idx]
             common_cols = list(df_1.columns)
-            df_1[common_cols] = df_1[common_cols].astype(str)
-            merged_df[common_cols] = merged_df[common_cols].astype(str)
+            merged_df = merged_df.replace({float("nan"): None})
             merged_df = df_1.merge(merged_df, on=common_cols, how="left")
             self.df = merged_df
         self.df = self.df.groupby(
