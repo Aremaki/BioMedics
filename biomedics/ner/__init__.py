@@ -2,7 +2,8 @@ import spacy
 
 if not spacy.tokens.Span.has_extension("event_type"):
     spacy.tokens.Span.set_extension("event_type", default=None)
-
+if not spacy.tokens.Span.has_extension("rel"):
+    spacy.tokens.Span.set_extension("rel", default=None)
 
 for ext in [
     "assertion",
