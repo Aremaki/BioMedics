@@ -1,6 +1,7 @@
 import duckdb
 import edsnlp
 import pandas as pd
+from spacy.tokens import Span
 from unidecode import unidecode
 
 from biomedics.ner.brat import BratConnector
@@ -93,6 +94,8 @@ class FuzzyNormaliser:
                         ent.text.lower().strip(),
                     ]
                     for qualifier in qualifiers:
+                        if not Span.has_extension(qualifier):
+                            Span.set_extension(qualifier, default=None)
                         ent_data.append(getattr(ent._, qualifier))
                     ents_list.append(ent_data)
         df_columns = ["term", "source", "span_converted", "term_to_norm"] + qualifiers
@@ -103,7 +106,7 @@ class FuzzyNormaliser:
         for index, row in self.df.iterrows():
             for k, v in exception_list.items():
                 if row["term_to_norm"] in v:
-                    self.df.at[index, "term_to_norm"] = k
+                    self.df.at[index, "term_to_norm"] = k  # type: ignore
 
         if self.method == "exact":
             self.df = self.df.merge(

@@ -9,6 +9,7 @@ import edsnlp
 import pandas as pd
 import torch
 from confit import Cli
+from spacy.tokens import Span
 from torch.utils.data import DataLoader
 from tqdm import tqdm  # Import tqdm for progress bar
 from transformers import CamembertForSequenceClassification, CamembertTokenizer
@@ -71,6 +72,8 @@ def classify_diso_cli(
                     [ent.start_char, ent.end_char],
                 ]
                 for qualifier in qualifiers:
+                    if not Span.has_extension(qualifier):
+                        Span.set_extension(qualifier, default=None)
                     ent_data.append(getattr(ent._, qualifier))
                 ents_list.append(ent_data)
                 terms.append(ent.text)
