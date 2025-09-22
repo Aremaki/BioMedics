@@ -135,7 +135,10 @@ class FuzzyNormaliser:
                 == merged_df["score"]
             )
             merged_df = merged_df[idx]
-            merged_df = df_1.merge(merged_df, on=list(df_1.columns), how="left")
+            common_cols = list(df_1.columns)
+            df_1[common_cols] = df_1[common_cols].astype(str)
+            merged_df[common_cols] = merged_df[common_cols].astype(str)
+            merged_df = df_1.merge(merged_df, on=common_cols, how="left")
             self.df = merged_df
         if self.method == "jaro_winkler":
             df_1 = self.df.copy()
