@@ -73,7 +73,7 @@ def classify_diso_cli(
                 ]
                 for qualifier in qualifiers:
                     if not Span.has_extension(qualifier):
-                        Span.set_extension(qualifier, default=None)
+                        Span.set_extension(qualifier, default=False)
                     ent_data.append(getattr(ent._, qualifier))
                 ents_list.append(ent_data)
                 terms.append(ent.text)
