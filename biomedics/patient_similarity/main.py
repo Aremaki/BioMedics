@@ -1,27 +1,16 @@
 import warnings
 from pathlib import Path
 
-import edsnlp
 import numpy as np
 import pandas as pd
-import torch
 from confection import Config
 from kneed import KneeLocator
 from sklearn.feature_extraction import DictVectorizer
-from transformers import CamembertForSequenceClassification, CamembertTokenizer
 
 from biomedics import BASE_DIR
-from biomedics.normalization.embedding_similarity.get_normalization_with_embedding import (
-    EmbeddingNormalizer,
-)
-from biomedics.normalization.embedding_similarity.text_preprocessor import (
-    TextPreprocessor,
-)
 from biomedics.patient_similarity.utils import (
-    add_atc_code,
-    add_label_class,
     compute_distance,
-    create_source_terms,
+    get_counts_for_source,
     stratified_sample_indices,
 )
 
@@ -29,11 +18,11 @@ warnings.filterwarnings("ignore")
 
 
 def process_and_sort_CRH_similarity(
-    medical_text,
+    case_name: str,
     selected_specialties,
     cohort_idx,
     cim10_codes,
-    config_name: str = "config_study_cortico_v1.cfg",
+    config_name: str = "config_patient_similarity.cfg",
     seed: int = 42,
 ):
     """
@@ -41,47 +30,15 @@ def process_and_sort_CRH_similarity(
     """
     config_path = BASE_DIR / "configs" / "end2end" / config_name
     config = Config().from_disk(config_path, interpolate=True)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    stopwords = config["emdedding_similarity"]["stopwords"]
-    text_preprocessor = TextPreprocessor(cased=False, stopwords=stopwords)
-    embedding_normalizer = EmbeddingNormalizer(
-        model_name_or_path=config["emdedding_similarity"]["model_path"],
-        tokenizer_name_or_path=config["emdedding_similarity"]["model_path"],
-        device=device,
-    )
-
-    # Load NER model
-    nlp = edsnlp.load(config["infer"]["model_path"]).to(device)
-
-    # Normalization data
-    drug_dict = pd.read_pickle(config["fuzzy_matching"]["drug_dict_path"])
-    atc_len = 7
-    drug_df = {}
-    for atc_code, values in drug_dict.items():
-        shortened_code = atc_code[:atc_len]
-        if shortened_code in drug_df:
-            drug_df[shortened_code] = list(set(drug_df[shortened_code] + values))
-        else:
-            drug_df[shortened_code] = values
-    drug_df = (
-        pd.DataFrame.from_dict({"norm_term": drug_df}, "index")
-        .T.explode("norm_term")
-        .reset_index()
-        .rename(columns={"index": "label"})
-    )
-    drug_df.norm_term = drug_df.norm_term.str.split(",")
-    drug_df = drug_df.explode("norm_term").reset_index(drop=True)
 
     # Classifier
-    labels_path = config["classify_diso"]["labels_path"]
-    classif_model_path = config["classify_diso"]["classif_model_path"]
-    with open(labels_path, "r") as f_out:
-        label_names = f_out.readline().strip().split(",")
-    num_labels = len(label_names)
-    model = CamembertForSequenceClassification.from_pretrained(
-        classif_model_path, num_labels=num_labels
-    ).to(device)  # type: ignore
-    tokenizer = CamembertTokenizer.from_pretrained(classif_model_path)
+    df_diso_class = pd.read_pickle(
+        config["infer"]["output_folders"][cohort_idx].parent
+        / "pred_with_classified_diso.pkl"
+    )
+    source_patient = get_counts_for_source(df_diso_class, f"{case_name}.ann")
+    if not source_patient or not selected_specialties:
+        raise ValueError("No valid source patient or specialties found.")
 
     # Vectorizer for patient distance
     vectorizer = DictVectorizer(sparse=True)
@@ -121,35 +78,16 @@ def process_and_sort_CRH_similarity(
         ]
     ]
 
-    # Run NLP model
-    doc = nlp(medical_text)
-    doc = add_atc_code(doc, drug_df, text_preprocessor)
-    doc = add_label_class(doc, model, tokenizer, text_preprocessor, label_names, device)
+    # Diso Embeddings
+    df_diso_class = pd.read_pickle(
+        config["infer"]["output_folders"][cohort_idx].parent / "pred_diso_embedding.pkl"
+    )
 
-    source_patient = create_source_terms(doc, selected_specialties, text_preprocessor)
-    if not source_patient or not selected_specialties:
-        raise ValueError("No valid source patient or specialties found.")
-
-    predicted_entities = [
-        text_preprocessor(
-            text=ent.text, remove_stopwords=True, remove_special_characters=True
-        )
-        for ent in doc.spans.get("Signe et symptôme", [])
-        if set(ent.kb_id_.split(" | ")).intersection(set(selected_specialties))
+    # Add new terms to df_embed if not already present
+    new_embeddings = df_diso_class[
+        ~df_diso_class["normalized_term"].isin(df_embed["normalized_term"])
     ]
-    new_terms = list(set(predicted_entities).difference(set(df_embed.normalized_term)))
-    if new_terms:
-        new_embeddings = embedding_normalizer.get_bert_embed(
-            new_terms,
-            normalize=True,
-            summary_method="CLS",
-            tqdm_bar=False,
-            batch_size=2,
-        )
-        new_embeddings = new_embeddings.to(torch.float16).cpu().numpy()
-        new_embeddings = pd.DataFrame(new_embeddings)
-        new_embeddings["normalized_term"] = new_terms
-        df_embed = pd.concat([df_embed, new_embeddings])
+    df_embed = pd.concat([df_embed, new_embeddings])
 
     distances_embedding = compute_distance(
         source_patient,
@@ -256,4 +194,4 @@ def process_and_sort_CRH_similarity(
         distances_embedding, m=10, seed=seed
     )
 
-    return distances_embedding, icd10_match, doc
+    return distances_embedding, icd10_match

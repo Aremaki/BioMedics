@@ -630,6 +630,271 @@ def plot_wordcloud(
     return wordclouds
 
 
+def plot_bio_chart_multi(
+    source_lab_tests,
+    topk_lab_tests,
+    topk_lab_tests_struct,
+    all_lab_tests,
+    all_lab_tests_struct,
+    bio_config,
+    k,
+    total_note,
+):
+    # Step 1: build reverse mapping {code -> label}
+    code_to_label = {
+        code: label for label, codes in bio_config.items() for code in codes
+    }
+    bio_mapping = pd.DataFrame(
+        list(code_to_label.items()), columns=["label", "bio_name"]
+    )
+
+    def _prepare_df(df, df_name, total):
+        df_filtered = df.merge(bio_mapping, on="label")
+        df_filtered = df_filtered[
+            (df_filtered.positive_value.eq(True)) | (df_filtered.positive_text.eq(True))
+        ]
+        df_filtered = df_filtered[["source", "bio_name"]].drop_duplicates()
+        df_grouped = (
+            df_filtered.groupby("bio_name", as_index=False)["source"]
+            .nunique()
+            .sort_values("source", ascending=False)
+        )
+        df_grouped["total"] = total
+        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
+        df_grouped["dataset"] = df_name  # Add column to distinguish datasets
+        return df_grouped
+
+    def _prepare_df_structured(df, df_name, total):
+        df_filtered = df[df.bio.isin(bio_config.keys())]
+        df_filtered = df_filtered[
+            (df_filtered.nval_num > df_filtered.confidence_num)
+            | (df_filtered.tval_char.str.contains("posi", case=False))
+            | (df_filtered.tval_char.str.contains("présence", case=False))
+        ]
+        df_filtered = (
+            df_filtered[["source", "bio"]]
+            .drop_duplicates()
+            .rename(columns={"bio": "bio_name"})
+        )
+
+        df_grouped = (
+            df_filtered.groupby("bio_name", as_index=False)["source"]
+            .nunique()
+            .sort_values("source", ascending=False)
+        )
+        df_grouped["total"] = total
+        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
+        df_grouped["dataset"] = df_name  # Add column to distinguish datasets
+        return df_grouped
+
+    # Prepare each dataframe
+    df_source = _prepare_df(source_lab_tests, "Source", 1)
+    df_topk = _prepare_df(topk_lab_tests, "Similar cohort (note only)", k)
+    df_topk_struct = _prepare_df_structured(
+        topk_lab_tests_struct, "Similar cohort (structured only)", k
+    )
+    df_all = _prepare_df(all_lab_tests, "All (note only)", total_note)
+    df_all_struct = _prepare_df_structured(
+        all_lab_tests_struct, "All (structured only)", total_note
+    )
+
+    def _combine(df1, df2):
+        combined = pd.concat([df1, df2])
+        combined = combined.groupby(["bio_name", "total"], as_index=False).agg(
+            {"source": "sum"}
+        )
+        combined["perc"] = combined["source"] / combined["total"]
+        return combined
+
+    # Combine TopK
+    df_topk_all = _combine(df_topk, df_topk_struct)
+    df_topk_all["dataset"] = "Similar cohort (structured + notes)"
+
+    # Combine All
+    df_all_all = _combine(df_all, df_all_struct)
+    df_all_all["dataset"] = "All (structured + notes)"
+
+    # Concatenate them
+    combined_df = pd.concat(
+        [
+            df_source,
+            df_topk,
+            df_topk_struct,
+            df_topk_all,
+            df_all,
+            df_all_struct,
+            df_all_all,
+        ],
+        ignore_index=True,
+    )
+
+    # Plot grouped bar chart
+    chart = (
+        alt.Chart(combined_df, title="Positive antibody by cohort")
+        .mark_bar()
+        .encode(
+            y=alt.Y(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            x=alt.X(
+                "dataset:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            color=alt.Color(
+                "dataset:N", scale=alt.Scale(scheme="tableau10"), title="Cohort"
+            ),
+            tooltip=[
+                alt.Tooltip("bio_name:N", title="Laboratory test"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+                alt.Tooltip("dataset:N", title="Dataset"),
+            ],
+            column=alt.Column(
+                "bio_name:N", spacing=2
+            ),  # optional if you want separated columns
+        )
+        .properties(height=300, width=100)
+    )
+
+    return chart
+
+
+def plot_treatments_chart_multi(
+    source_drugs,
+    topk_drugs,
+    topk_drugs_struct,
+    all_drugs,
+    all_drugs_struct,
+    treatment_config,
+    k,
+    total_note,
+):
+    # Step 1: build reverse mapping {code -> label}
+    code_to_label = {
+        code: label for label, codes in treatment_config.items() for code in codes
+    }
+    drug_mapping = pd.DataFrame(
+        list(code_to_label.items()), columns=["label", "drug_name"]
+    )
+
+    def _prepare_df(df, df_name, total):
+        df_filtered = df.merge(drug_mapping, on="label")
+        df_filtered = df_filtered[["source", "drug_name"]].drop_duplicates()
+        df_grouped = (
+            df_filtered.groupby("drug_name", as_index=False)["source"]
+            .nunique()
+            .sort_values("source", ascending=False)
+        )
+        df_grouped["total"] = total
+        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
+        df_grouped["dataset"] = df_name
+        return df_grouped
+
+    def _prepare_df_structured(df, df_name, total):
+        df_filtered = df[df.med.isin(treatment_config.keys())]
+        df_filtered = df_filtered[
+            (df_filtered.nval_num > df_filtered.confidence_num)
+            | (df_filtered.tval_char.str.contains("posi", case=False))
+            | (df_filtered.tval_char.str.contains("présence", case=False))
+        ]
+        df_filtered = (
+            df_filtered[["source", "med"]]
+            .drop_duplicates()
+            .rename(columns={"med": "drug_name"})
+        )
+
+        df_grouped = (
+            df_filtered.groupby("drug_name", as_index=False)["source"]
+            .nunique()
+            .sort_values("source", ascending=False)
+        )
+        df_grouped["total"] = total
+        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
+        df_grouped["dataset"] = df_name  # Add column to distinguish datasets
+        return df_grouped
+
+    # Prepare each dataframe
+    df_source = _prepare_df(source_drugs, "Source", 1)
+    df_topk = _prepare_df(topk_drugs, "Similar cohort (note only)", k)
+    df_topk_struct = _prepare_df_structured(
+        topk_drugs_struct, "Similar cohort (structured only)", k
+    )
+    df_all = _prepare_df(all_drugs, "All (note only)", total_note)
+    df_all_struct = _prepare_df_structured(
+        all_drugs_struct, "All (structured only)", total_note
+    )
+
+    def _combine(df1, df2):
+        combined = pd.concat([df1, df2])
+        combined = combined.groupby(["drug_name", "total"], as_index=False).agg(
+            {"source": "sum"}
+        )
+        combined["perc"] = combined["source"] / combined["total"]
+        return combined
+
+    # Combine TopK
+    df_topk_all = _combine(df_topk, df_topk_struct)
+    df_topk_all["dataset"] = "Similar cohort (structured + notes)"
+
+    # Combine All
+    df_all_all = _combine(df_all, df_all_struct)
+    df_all_all["dataset"] = "All (structured + notes)"
+
+    # Concatenate them
+    combined_df = pd.concat(
+        [
+            df_source,
+            df_topk,
+            df_topk_struct,
+            df_topk_all,
+            df_all,
+            df_all_struct,
+            df_all_all,
+        ],
+        ignore_index=True,
+    )
+
+    # Plot grouped bar chart
+    chart = (
+        alt.Chart(combined_df, title="Treatments by cohort")
+        .mark_bar()
+        .encode(
+            y=alt.Y(
+                "perc:Q",
+                title="Percentage",
+                axis=alt.Axis(format="%", labelFontSize=12, titleFontSize=14),
+            ),
+            x=alt.X(
+                "dataset:N",
+                sort="-x",
+                title="",
+                axis=alt.Axis(labelFontSize=12, titleFontSize=14),
+            ),
+            color=alt.Color(
+                "dataset:N", scale=alt.Scale(scheme="tableau10"), title="Cohort"
+            ),
+            tooltip=[
+                alt.Tooltip("drug_name:N", title="Treatment"),
+                alt.Tooltip("source:Q", title="Frequency"),
+                alt.Tooltip("perc:Q", format=".1%", title="Percentage"),
+                alt.Tooltip("total:Q", title="Total Note"),
+                alt.Tooltip("dataset:N", title="Dataset"),
+            ],
+            column=alt.Column(
+                "drug_name:N", spacing=2
+            ),  # optional if you want separated columns
+        )
+        .properties(height=300, width=100)
+    )
+
+    return chart
+
+
 def death_plot(
     topk_outcomes,
     total_note,
