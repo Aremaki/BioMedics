@@ -797,11 +797,6 @@ def plot_treatments_chart_multi(
 
     def _prepare_df_structured(df, df_name, total):
         df_filtered = df[df.med.isin(treatment_config.keys())]
-        df_filtered = df_filtered[
-            (df_filtered.nval_num > df_filtered.confidence_num)
-            | (df_filtered.tval_char.str.contains("posi", case=False))
-            | (df_filtered.tval_char.str.contains("présence", case=False))
-        ]
         df_filtered = (
             df_filtered[["source", "med"]]
             .drop_duplicates()
