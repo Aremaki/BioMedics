@@ -639,6 +639,7 @@ def plot_bio_chart_multi(
     bio_config,
     k,
     total_note,
+    only_all=True,
 ):
     # Step 1: build reverse mapping {code -> label}
     code_to_label = {
@@ -715,18 +716,28 @@ def plot_bio_chart_multi(
     df_all_all["dataset"] = "All (structured + notes)"
 
     # Concatenate them
-    combined_df = pd.concat(
-        [
-            df_source,
-            df_topk,
-            df_topk_struct,
-            df_topk_all,
-            df_all,
-            df_all_struct,
-            df_all_all,
-        ],
-        ignore_index=True,
-    )
+    if only_all:
+        combined_df = pd.concat(
+            [
+                df_source,
+                df_topk_all,
+                df_all_all,
+            ],
+            ignore_index=True,
+        )
+    else:
+        combined_df = pd.concat(
+            [
+                df_source,
+                df_topk,
+                df_topk_struct,
+                df_topk_all,
+                df_all,
+                df_all_struct,
+                df_all_all,
+            ],
+            ignore_index=True,
+        )
 
     # Plot grouped bar chart
     chart = (
@@ -773,6 +784,7 @@ def plot_treatments_chart_multi(
     treatment_config,
     k,
     total_note,
+    only_all=True,
 ):
     # Step 1: build reverse mapping {code -> label}
     code_to_label = {
@@ -841,18 +853,28 @@ def plot_treatments_chart_multi(
     df_all_all["dataset"] = "All (structured + notes)"
 
     # Concatenate them
-    combined_df = pd.concat(
-        [
-            df_source,
-            df_topk,
-            df_topk_struct,
-            df_topk_all,
-            df_all,
-            df_all_struct,
-            df_all_all,
-        ],
-        ignore_index=True,
-    )
+    if only_all:
+        combined_df = pd.concat(
+            [
+                df_source,
+                df_topk_all,
+                df_all_all,
+            ],
+            ignore_index=True,
+        )
+    else:
+        combined_df = pd.concat(
+            [
+                df_source,
+                df_topk,
+                df_topk_struct,
+                df_topk_all,
+                df_all,
+                df_all_struct,
+                df_all_all,
+            ],
+            ignore_index=True,
+        )
 
     # Plot grouped bar chart
     chart = (
