@@ -22,18 +22,23 @@ def process_and_sort_CRH_similarity(
     selected_specialties,
     cohort_idx,
     cim10_codes,
-    config_name: str = "config_patient_similarity.cfg",
+    conf_source_name: str = "config_patient_similarity.cfg",
+    conf_target_name: str = "config_study_cortico_v1.cfg",
     seed: int = 42,
 ):
     """
     Processes a medical text to find similar patients.
     """
-    config_path = BASE_DIR / "configs" / "end2end" / config_name
-    config = Config().from_disk(config_path, interpolate=True)
+    config_source = Config().from_disk(
+        BASE_DIR / "configs" / "end2end" / conf_source_name, interpolate=True
+    )
+    config_target = Config().from_disk(
+        BASE_DIR / "configs" / "end2end" / conf_target_name, interpolate=True
+    )
 
     # Classifier
     df_diso_class = pd.read_pickle(
-        Path(config["infer"]["output_folders"][cohort_idx]).parent
+        Path(config_source["infer"]["output_folders"][cohort_idx]).parent
         / "pred_with_classified_diso.pkl"
     )
     source_patient = get_counts_for_source(df_diso_class, f"{case_name}.ann")
@@ -44,31 +49,33 @@ def process_and_sort_CRH_similarity(
     vectorizer = DictVectorizer(sparse=True)
 
     # Embeddings
-    output_folder = Path(config["infer"]["output_folders"][cohort_idx]).parent
-    df_embed = pd.read_pickle(f"{output_folder}/pred_diso_embedding.pkl")
-    df_embed = df_embed.drop(columns=["scores", "labels"])
+    output_folder = Path(config_target["infer"]["output_folders"][cohort_idx]).parent
+    df_embed_target = pd.read_pickle(f"{output_folder}/pred_diso_embedding.pkl")
+    df_embed_target = df_embed_target.drop(columns=["scores", "labels"])
     target_patients = pd.read_pickle(f"{output_folder}/pred_with_classified_diso.pkl")
     target_patients.labels = target_patients.labels.str.split(r" \| ")
     target_patients = target_patients.explode("labels")
-    outcomes = pd.read_pickle(f"{output_folder}/outcomes.pkl")
+    outcomes_target = pd.read_pickle(f"{output_folder}/outcomes.pkl")
     # compute a df for each source the number of icd10_codes starting with the cim_codes input
     cim10_codes = [
         "CIM10:" + code.split(" : ")[0].replace(".", "") for code in cim10_codes
     ]
-    outcomes["icd10_codes"] = outcomes["icd10_codes"].where(
-        outcomes["icd10_codes"].isna(),
-        outcomes["icd10_codes"].astype(str).str.split("|").str[0],
+    outcomes_target["icd10_codes"] = outcomes_target["icd10_codes"].where(
+        outcomes_target["icd10_codes"].isna(),
+        outcomes_target["icd10_codes"].astype(str).str.split("|").str[0],
     )
-    outcomes["matched_icd10_codes"] = outcomes["icd10_codes"].apply(
+    outcomes_target["matched_icd10_codes"] = outcomes_target["icd10_codes"].apply(
         lambda codes: [
             code
             for code in codes
             if any(code.startswith(cim_code) for cim_code in cim10_codes)
         ]
     )
-    outcomes["num_icd10_match"] = outcomes["matched_icd10_codes"].apply(len)
-    outcomes["target_icd10_codes"] = [cim10_codes] * len(outcomes)
-    icd10_match = outcomes[
+    outcomes_target["num_icd10_match"] = outcomes_target["matched_icd10_codes"].apply(
+        len
+    )
+    outcomes_target["target_icd10_codes"] = [cim10_codes] * len(outcomes_target)
+    icd10_match = outcomes_target[
         [
             "source",
             "matched_icd10_codes",
@@ -79,16 +86,16 @@ def process_and_sort_CRH_similarity(
     ]
 
     # Diso Embeddings
-    df_diso_class = pd.read_pickle(
-        Path(config["infer"]["output_folders"][cohort_idx]).parent
+    df_embed_source = pd.read_pickle(
+        Path(config_source["infer"]["output_folders"][cohort_idx]).parent
         / "pred_diso_embedding.pkl"
     )
 
     # Add new terms to df_embed if not already present
-    new_embeddings = df_diso_class[
-        ~df_diso_class["normalized_term"].isin(df_embed["normalized_term"])
-    ]
-    df_embed = pd.concat([df_embed, new_embeddings])
+    df_embed_source = df_embed_source[
+        ~df_embed_source["normalized_term"].isin(df_embed_target["normalized_term"])
+    ].drop(columns=["scores", "labels"])
+    df_embed = pd.concat([df_embed_target, df_embed_source])
 
     distances_embedding = compute_distance(
         source_patient,

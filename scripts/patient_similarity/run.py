@@ -13,13 +13,17 @@ app = typer.Typer()
 
 
 @app.command()
-def main(config_name: str = "config_patient_similarity.cfg"):
+def main(
+    conf_source_name: str = "config_patient_similarity.cfg",
+    conf_target_name: str = "config_study_cortico_v1.cfg",
+):
     """
     Main function to process clinical cases and find similar patients.
     """
     data_path = BASE_DIR / "data" / "annotated_CRH" / "fictive_clinical_cases"
-    config_path = BASE_DIR / "configs" / "end2end" / config_name
-    config = Config().from_disk(config_path, interpolate=True)
+    config_source = Config().from_disk(
+        BASE_DIR / "configs" / "end2end" / conf_source_name, interpolate=True
+    )
     cohort_dirs = [
         d for d in data_path.iterdir() if d.is_dir() and d.name.split("_")[0].isdigit()
     ]
@@ -42,7 +46,8 @@ def main(config_name: str = "config_patient_similarity.cfg"):
                 specialties,
                 cohort_idx,
                 cim10_codes,
-                config_name=config_name,
+                conf_source_name=conf_source_name,
+                conf_target_name=conf_target_name,
                 seed=int(
                     case_file.name.split(".")[0].split("_")[
                         -1
@@ -64,7 +69,7 @@ def main(config_name: str = "config_patient_similarity.cfg"):
             )
 
             # Create directory for BRAT annotations
-            brat_data_path = Path(config["group_brat"]["conf_path"])
+            brat_data_path = Path(config_source["group_brat"]["conf_path"])
             fictive_case_dir = (
                 brat_data_path / "fictive_clinical_cases" / cohort_dir.name
             )
