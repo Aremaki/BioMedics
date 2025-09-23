@@ -649,14 +649,9 @@ def plot_bio_chart_multi(
         list(code_to_label.items()), columns=["label", "bio_name"]
     )
 
-    def _prepare_df(df, df_name, total):
-        df_filtered = df.merge(bio_mapping, on="label")
-        df_filtered = df_filtered[
-            (df_filtered.positive_value.eq(True)) | (df_filtered.positive_text.eq(True))
-        ]
-        df_filtered = df_filtered[["source", "bio_name"]].drop_duplicates()
+    def _compute_df_percentage(df, df_name, total):
         df_grouped = (
-            df_filtered.groupby("bio_name", as_index=False)["source"]
+            df.groupby("bio_name", as_index=False)["source"]
             .nunique()
             .sort_values("source", ascending=False)
         )
@@ -665,7 +660,15 @@ def plot_bio_chart_multi(
         df_grouped["dataset"] = df_name  # Add column to distinguish datasets
         return df_grouped
 
-    def _prepare_df_structured(df, df_name, total):
+    def _prepare_df(df):
+        df_filtered = df.merge(bio_mapping, on="label")
+        df_filtered = df_filtered[
+            (df_filtered.positive_value.eq(True)) | (df_filtered.positive_text.eq(True))
+        ]
+        df_filtered = df_filtered[["source", "bio_name"]].drop_duplicates()
+        return df_filtered
+
+    def _prepare_df_structured(df):
         df_filtered = df[df.bio.isin(bio_config.keys())]
         df_filtered = df_filtered[
             (df_filtered.nval_num > df_filtered.confidence_num)
@@ -678,42 +681,34 @@ def plot_bio_chart_multi(
             .rename(columns={"bio": "bio_name"})
         )
 
-        df_grouped = (
-            df_filtered.groupby("bio_name", as_index=False)["source"]
-            .nunique()
-            .sort_values("source", ascending=False)
-        )
-        df_grouped["total"] = total
-        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
-        df_grouped["dataset"] = df_name  # Add column to distinguish datasets
-        return df_grouped
+        return df_filtered
 
     # Prepare each dataframe
-    df_source = _prepare_df(source_lab_tests, "Source", 1)
-    df_topk = _prepare_df(topk_lab_tests, "Similar cohort (note only)", k)
-    df_topk_struct = _prepare_df_structured(
-        topk_lab_tests_struct, "Similar cohort (structured only)", k
+    df_source = _compute_df_percentage(_prepare_df(source_lab_tests), "Source", 1)
+    df_topk_filtered = _prepare_df(topk_lab_tests)
+    df_topk = _compute_df_percentage(df_topk_filtered, "Similar cohort (note only)", k)
+    df_topk_struct_fitered = _prepare_df_structured(topk_lab_tests_struct)
+    df_topk_struct = _compute_df_percentage(
+        df_topk_struct_fitered, "Similar cohort (structured only)", k
     )
-    df_all = _prepare_df(all_lab_tests, "All (note only)", total_note)
-    df_all_struct = _prepare_df_structured(
-        all_lab_tests_struct, "All (structured only)", total_note
+    df_all_filtered = _prepare_df(all_lab_tests)
+    df_all = _compute_df_percentage(df_all_filtered, "All (note only)", total_note)
+    df_all_struct_fitered = _prepare_df_structured(all_lab_tests_struct)
+    df_all_struct = _compute_df_percentage(
+        df_all_struct_fitered, "All (structured only)", total_note
     )
-
-    def _combine(df1, df2):
-        combined = pd.concat([df1, df2])
-        combined = combined.groupby(["bio_name", "total"], as_index=False).agg(
-            {"source": "sum"}
-        )
-        combined["perc"] = combined["source"] / combined["total"]
-        return combined
 
     # Combine TopK
-    df_topk_all = _combine(df_topk, df_topk_struct)
-    df_topk_all["dataset"] = "Similar cohort (structured + notes)"
-
-    # Combine All
-    df_all_all = _combine(df_all, df_all_struct)
-    df_all_all["dataset"] = "All (structured + notes)"
+    df_topk_all = _compute_df_percentage(
+        pd.concat([df_topk_filtered, df_topk_struct_fitered]),
+        "Similar cohort (structured + notes)",
+        k,
+    )
+    df_all_all = _compute_df_percentage(
+        pd.concat([df_all_filtered, df_all_struct_fitered]),
+        "All (structured + notes)",
+        total_note,
+    )
 
     # Concatenate them
     if only_all:
@@ -794,11 +789,9 @@ def plot_treatments_chart_multi(
         list(code_to_label.items()), columns=["label", "drug_name"]
     )
 
-    def _prepare_df(df, df_name, total):
-        df_filtered = df.merge(drug_mapping, on="label")
-        df_filtered = df_filtered[["source", "drug_name"]].drop_duplicates()
+    def _compute_df_percentage(df, df_name, total):
         df_grouped = (
-            df_filtered.groupby("drug_name", as_index=False)["source"]
+            df.groupby("drug_name", as_index=False)["source"]
             .nunique()
             .sort_values("source", ascending=False)
         )
@@ -807,50 +800,46 @@ def plot_treatments_chart_multi(
         df_grouped["dataset"] = df_name
         return df_grouped
 
-    def _prepare_df_structured(df, df_name, total):
+    def _prepare_df(df):
+        df_filtered = df.merge(drug_mapping, on="label")
+        df_filtered = df_filtered[["source", "drug_name"]].drop_duplicates()
+        return df_filtered
+
+    def _prepare_df_structured(df):
         df_filtered = df[df.med.isin(treatment_config.keys())]
         df_filtered = (
             df_filtered[["source", "med"]]
             .drop_duplicates()
             .rename(columns={"med": "drug_name"})
         )
-
-        df_grouped = (
-            df_filtered.groupby("drug_name", as_index=False)["source"]
-            .nunique()
-            .sort_values("source", ascending=False)
-        )
-        df_grouped["total"] = total
-        df_grouped["perc"] = df_grouped["source"] / df_grouped["total"]
-        df_grouped["dataset"] = df_name  # Add column to distinguish datasets
-        return df_grouped
+        return df_filtered
 
     # Prepare each dataframe
-    df_source = _prepare_df(source_drugs, "Source", 1)
-    df_topk = _prepare_df(topk_drugs, "Similar cohort (note only)", k)
-    df_topk_struct = _prepare_df_structured(
-        topk_drugs_struct, "Similar cohort (structured only)", k
+    df_source = _compute_df_percentage(_prepare_df(source_drugs), "Source", 1)
+    df_topk_filtered = _prepare_df(topk_drugs)
+    df_topk = _compute_df_percentage(df_topk_filtered, "Similar cohort (note only)", k)
+    df_topk_struct_fitered = _prepare_df_structured(topk_drugs_struct)
+    df_topk_struct = _compute_df_percentage(
+        df_topk_struct_fitered, "Similar cohort (structured only)", k
     )
-    df_all = _prepare_df(all_drugs, "All (note only)", total_note)
-    df_all_struct = _prepare_df_structured(
-        all_drugs_struct, "All (structured only)", total_note
+    df_all_filtered = _prepare_df(all_drugs)
+    df_all = _compute_df_percentage(df_all_filtered, "All (note only)", total_note)
+    df_all_struct_fitered = _prepare_df_structured(all_drugs_struct)
+    df_all_struct = _compute_df_percentage(
+        df_all_struct_fitered, "All (structured only)", total_note
     )
-
-    def _combine(df1, df2):
-        combined = pd.concat([df1, df2])
-        combined = combined.groupby(["drug_name", "total"], as_index=False).agg(
-            {"source": "sum"}
-        )
-        combined["perc"] = combined["source"] / combined["total"]
-        return combined
 
     # Combine TopK
-    df_topk_all = _combine(df_topk, df_topk_struct)
-    df_topk_all["dataset"] = "Similar cohort (structured + notes)"
-
-    # Combine All
-    df_all_all = _combine(df_all, df_all_struct)
-    df_all_all["dataset"] = "All (structured + notes)"
+    df_topk_all = _compute_df_percentage(
+        pd.concat([df_topk_filtered, df_topk_struct_fitered]),
+        "Similar cohort (structured + notes)",
+        k,
+    )
+    df_all_all = _compute_df_percentage(
+        pd.concat([df_all_filtered, df_all_struct_fitered]),
+        "All (structured + notes)",
+        total_note,
+    )
 
     # Concatenate them
     if only_all:
