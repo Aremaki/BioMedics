@@ -33,7 +33,7 @@ def process_and_sort_CRH_similarity(
 
     # Classifier
     df_diso_class = pd.read_pickle(
-        config["infer"]["output_folders"][cohort_idx].parent
+        Path(config["infer"]["output_folders"][cohort_idx]).parent
         / "pred_with_classified_diso.pkl"
     )
     source_patient = get_counts_for_source(df_diso_class, f"{case_name}.ann")
@@ -80,7 +80,8 @@ def process_and_sort_CRH_similarity(
 
     # Diso Embeddings
     df_diso_class = pd.read_pickle(
-        config["infer"]["output_folders"][cohort_idx].parent / "pred_diso_embedding.pkl"
+        Path(config["infer"]["output_folders"][cohort_idx]).parent
+        / "pred_diso_embedding.pkl"
     )
 
     # Add new terms to df_embed if not already present
