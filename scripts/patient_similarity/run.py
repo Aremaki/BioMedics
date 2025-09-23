@@ -113,18 +113,18 @@ def main(
 
             # Copy case file to MIE folder
             shutil.copy(
-                fictive_case_dir / f"case_{case_file.stem}.txt",
+                fictive_case_dir / f"{case_file.stem}.txt",
                 MIE_folder / "fictive_case.txt",
             )
             (MIE_folder / "fictive_case.ann").touch()
 
             # Copy case file to MIE annotated folder
             shutil.copy(
-                fictive_case_dir / f"case_{case_file.stem}.txt",
+                fictive_case_dir / f"{case_file.stem}.txt",
                 MIE_folder_annotated / "fictive_case.txt",
             )
             shutil.copy(
-                fictive_case_dir / f"case_{case_file.stem}.ann",
+                fictive_case_dir / f"{case_file.stem}.ann",
                 MIE_folder_annotated / "fictive_case.ann",
             )
             # Copy BRAT note from folder in brat_data
