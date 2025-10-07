@@ -2,7 +2,32 @@
 
 This guide will help you configure and run the end2end pipeline for your specific study.
 
-## Step 1: Create a Config File
+## Step 1: Download models and data
+
+### NER + QUALIF model
+You have two options:
+- **Train your own**: Train an NER + QUALIF model using your annotated dataset, following the instructions in the repository’s `README.md` under the **“NER + QUALIF”** section.
+
+- **Use an off-the-shelf model**: Request access to the finetuned **`eds-biomedics-v4`** model from the Data Science team
+
+Store the chosen model in the appropriate models folder used by the pipeline (e.g., `models/ner/` or the path referenced in your config).
+
+### Normalization model
+- We recommend the CODER-all model from Hugging Face: https://huggingface.co/GanjinZero/coder_all
+- Download and place it under:
+   ```
+   models/word_embedding/
+   ```
+
+### UMLS data
+- Download the full UMLS release (requires a UMLS account and license): https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html
+- Prepare and process UMLS according to the repository notebook:
+   ```
+   data/umls/manage_umls.ipynb
+   ```
+   Follow that notebook to extract and store the UMLS resources the pipeline expects.
+
+## Step 2: Create a Config File
 
 Before running the pipeline, you must create and modify a configuration file.
 Navigate to the config directory:
@@ -16,8 +41,6 @@ Create a new config file or duplicate an existing one. You can use the following
 ```
 config_end_to_end_public.cfg
 ```
-
-## Step 2: Set Input and Output Folders
 
 In your configuration file, set the following paths:
 
