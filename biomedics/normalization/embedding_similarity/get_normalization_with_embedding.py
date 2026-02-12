@@ -1,13 +1,9 @@
-import sys
-
 import torch
 from tqdm import tqdm
 from transformers import (
     AutoModel,
     AutoTokenizer,
 )
-
-sys.path.append("/export/home/cse200093/scratch/BioMedics/normalisation/training")
 
 
 class EmbeddingNormalizer:

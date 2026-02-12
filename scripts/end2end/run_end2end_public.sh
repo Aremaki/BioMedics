@@ -1,14 +1,26 @@
 #!/bin/bash
-source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
-
 # Set config file path (override with first arg or existing env var `config`)
-config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
+config="${1:-${config:-../../configs/end2end/config_end_to_end_public.cfg}}"
 export config
-
 # Ensure logs directory exists for SLURM and other logs
 mkdir -p logs
 
 echo "Using config: $config"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+BIOMEDICS_ROOT="${BIOMEDICS_ROOT:-$(cd "$SCRIPTS_DIR/.." && pwd)}"
+VENV_PATH="${VENV_PATH:-$BIOMEDICS_ROOT/.venv/bin/activate}"
+
+export SCRIPT_DIR SCRIPTS_DIR BIOMEDICS_ROOT VENV_PATH
+
+if [ -f "$VENV_PATH" ]; then
+    source "$VENV_PATH"
+else
+    echo "Warning: venv not found at $VENV_PATH"
+fi
+
+
 
 
 #######################
@@ -16,7 +28,7 @@ echo "Using config: $config"
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch run_ner.sh | awk '{print $NF}')
+JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_ner.sh" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options
@@ -67,7 +79,7 @@ eds-toolbox spark submit --config "$config" --log-path logs/ ../extract_measurem
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch run_normalization.sh | awk '{print $NF}')
+JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_normalization.sh" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options
@@ -110,7 +122,7 @@ echo "All Good"
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch run_group_data_in_brat.sh | awk '{print $NF}')
+JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_group_data_in_brat.sh" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options

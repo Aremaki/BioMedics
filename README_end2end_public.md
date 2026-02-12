@@ -2,7 +2,48 @@
 
 This guide will help you configure and run the end2end pipeline for your specific study.
 
-## Step 1: Download models and data
+## Step 1: Clone repository
+
+- Clone the repository:
+```shell
+git clone https://github.com/Aremaki/BioMedics.git
+```
+
+## Step 2: Python environment
+
+- In order to process large-scale data, the study uses [Spark 2.4](https://spark.apache.org/docs/2.4.8/index.html) (an open-source engine for large-scale data processing) which requires to:
+
+- Install a version of Python $\geq 3.7.1$ and $< 3.8$. For instance you can use conda:
+
+```shell
+conda create -n py37 python=3.7.16
+conda activate py37
+```
+
+- Create a virtual environment with the suitable Python version (**>= 3.7.1 and < 3.8**) in the **root of the project** (BioMedics):
+
+```shell
+python -m venv .venv
+conda deactivate
+source .venv/bin/activate
+```
+
+- Install [Poetry](https://python-poetry.org/) (a tool for dependency management and packaging in Python) with the following command line:
+
+```shell
+pip install poetry==1.5.1
+```
+
+- Install dependencies:
+
+```shell
+pip install pypandoc==1.7.5
+pip install pyspark==2.4.8
+poetry install
+pip uninstall pypandoc
+```
+
+## Step 3: Download models and data
 
 ### NER + QUALIF model
 You have two options:
@@ -13,11 +54,16 @@ You have two options:
 Store the chosen model in the appropriate models folder used by the pipeline (e.g., `models/ner/` or the path referenced in your config).
 
 ### Normalization model
-- We recommend the CODER-all model from Hugging Face: https://huggingface.co/GanjinZero/coder_all
-- Download and place it under:
-   ```
-   models/word_embedding/
-   ```
+- We recommend the SapBERT-all model from Hugging Face: https://huggingface.co/cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR. Download and place it under model/word_embedding/SapBERT_all.
+
+```shell
+python -c "from huggingface_hub import snapshot_download; \
+snapshot_download(
+    repo_id='cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR',
+    local_dir='models/word_embedding/SapBERT_all',
+    local_dir_use_symlinks=False
+)"
+```
 
 ### UMLS data
 - Download the full UMLS release (requires a UMLS account and license): https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html
@@ -27,7 +73,7 @@ Store the chosen model in the appropriate models folder used by the pipeline (e.
    ```
    Follow that notebook to extract and store the UMLS resources the pipeline expects.
 
-## Step 2: Create a Config File
+## Step 4: Create a Config File
 
 Before running the pipeline, you must create and modify a configuration file.
 Navigate to the config directory:
@@ -55,7 +101,7 @@ In the `infer` section:
 In the `group_brat` section:
 - **output_dirs**: Specify the paths to the folders where BRAT will store the annotated results.
 
-## Step 3: Update the Shell Scripts
+## Step 5: Update the Shell Scripts
 
 Next, ensure that the main shell script use the correct configuration file.
 Navigate to the shell script:
@@ -66,7 +112,7 @@ biomedics/scripts/end2end/run_end2end_public.sh
 
 Replace the existing config reference with the name of your config file (e.g., `conf_study_cortico_v1`).
 
-## Step 4: Run the Pipeline
+## Step 6: Run the Pipeline
 
 Once everything is configured, you can launch the pipeline by running:
 
@@ -74,12 +120,12 @@ Once everything is configured, you can launch the pipeline by running:
 bash run_end2end_public.sh
 ```
 
-## Step 5: Visualize the Results in BRAT
+## Step 7: Visualize the Results in BRAT
 
 You can visualize your model predictions using the BRAT annotation tool.
 
 1. Open your browser and go to:
-   [https://brat-cse200093.eds.aphp.fr](https://brat-cse200093.eds.aphp.fr)
+   [https://brat-cseXXXXXX.eds.aphp.fr](https://brat-cse200093.eds.aphp.fr)
 
 2. Navigate to the folder where you saved the model predictions (as defined in `group_brat`).
 

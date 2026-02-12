@@ -8,13 +8,21 @@
 #SBATCH --output=logs/slurm-%j-stdout.log
 #SBATCH --error=logs/slurm-%j-stderr.log
 #SBATCH --container-image /scratch/images/sparkhadoop.sqsh  --container-mounts=/export/home/$USER:/export/home/$USER,/data/scratch/$USER:/data/scratch/$USER --container-mount-home --container-writable
-source $HOME/.user_conda/miniconda/etc/profile.d/conda.sh # appel de ce script
-cd "/export/home/cse200093/Adam/biomedics/scripts/group_data_in_brat"
-source "/export/home/cse200093/Adam/biomedics/.venv/bin/activate"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+BIOMEDICS_ROOT="${BIOMEDICS_ROOT:-$(cd "$SCRIPTS_DIR/.." && pwd)}"
+VENV_PATH="${VENV_PATH:-$BIOMEDICS_ROOT/.venv/bin/activate}"
+
+cd "$SCRIPTS_DIR/group_data_in_brat"
+if [ -f "$VENV_PATH" ]; then
+	source "$VENV_PATH"
+else
+	echo "Warning: venv not found at $VENV_PATH"
+fi
 conda deactivate
 
 # Set config file path (override with first arg or existing env var `config`)
-config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
+config="${1:-${config:-../../configs/end2end/config_end_to_end_public.cfg}}"
 export config
 echo "Using config: $config"
 

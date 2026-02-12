@@ -52,7 +52,7 @@ BioMedics aims specifically at extracting laboratory test and drug information f
 
 - In order to process large-scale data, the study uses [Spark 2.4](https://spark.apache.org/docs/2.4.8/index.html) (an open-source engine for large-scale data processing) which requires to:
 
-  - Install a version of Python $\geq 3.7.1$ and $< 3.8$.
+  - Install a version of Python $\geq 3.7.1$ and $< 3.9$.
   - Install Java 8 (you can install [OpenJDK 8](https://openjdk.org/projects/jdk8/), an open-source reference implementation of Java 8)
 
 - Clone the repository:
@@ -61,7 +61,7 @@ BioMedics aims specifically at extracting laboratory test and drug information f
 git clone https://github.com/Aremaki/BioMedics.git
 ```
 
-- Create a virtual environment with the suitable Python version (**>= 3.7.1 and < 3.8**):
+- Create a virtual environment with the suitable Python version (**>= 3.7.1 and < 3.9**):
 
 ```shell
 cd biomedics
