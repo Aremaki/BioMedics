@@ -11,37 +11,33 @@ git clone https://github.com/Aremaki/BioMedics.git
 
 ## Step 2: Python environment
 
-- In order to process large-scale data, the study uses [Spark 2.4](https://spark.apache.org/docs/2.4.8/index.html) (an open-source engine for large-scale data processing) which requires to:
+In order to process large-scale data, the study uses [Spark 2.4](https://spark.apache.org/docs/2.4.8/index.html) (an open-source engine for large-scale data processing) which requires to:
 
 - Install a version of Python $\geq 3.7.1$ and $< 3.8$. For instance you can use conda:
-
-```shell
-conda create -n py37 python=3.7.16
-conda activate py37
-```
+   ```shell
+   conda create -n py37 python=3.7.16
+   conda activate py37
+   ```
 
 - Create a virtual environment with the suitable Python version (**>= 3.7.1 and < 3.8**) in the **root of the project** (BioMedics):
-
-```shell
-python -m venv .venv
-conda deactivate
-source .venv/bin/activate
-```
+   ```shell
+   python -m venv .venv
+   conda deactivate
+   source .venv/bin/activate
+   ```
 
 - Install [Poetry](https://python-poetry.org/) (a tool for dependency management and packaging in Python) with the following command line:
-
-```shell
-pip install poetry==1.5.1
-```
+   ```shell
+   pip install poetry==1.5.1
+   ```
 
 - Install dependencies:
-
-```shell
-pip install pypandoc==1.7.5
-pip install pyspark==2.4.8
-poetry install
-pip uninstall pypandoc
-```
+   ```shell
+   pip install pypandoc==1.7.5
+   pip install pyspark==2.4.8
+   poetry install
+   pip uninstall pypandoc
+   ```
 
 ## Step 3: Download models and data
 
