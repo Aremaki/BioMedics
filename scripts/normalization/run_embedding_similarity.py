@@ -12,7 +12,7 @@ from edsnlp.connectors import BratConnector
 
 from biomedics.normalization.embedding_similarity.main import get_embedding_similarity
 
-app = Cli(pretty_exceptions_show_locals=False)
+app = Cli()
 
 
 @app.command(name="emdedding_similarity")

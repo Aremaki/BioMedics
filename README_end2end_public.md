@@ -35,9 +35,16 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
    ```shell
    pip install pypandoc==1.7.5
    pip install pyspark==2.4.8
+   pip install "edsnlp[ml] @ git+https://github.com/Aremaki/edsnlp.git@rule_based_relation"
    poetry install
    pip uninstall pypandoc
    ```
+
+- Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
+
+```shell
+pip install edstoolbox==0.7.0
+```
 
 ## Step 3: Download models and data
 

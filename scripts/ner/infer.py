@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from biomedics.ner.brat import BratConnector
 
-app = Cli(pretty_exceptions_show_locals=False)
+app = Cli()
 
 
 @app.command(name="infer", registry=registry)

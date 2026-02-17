@@ -13,7 +13,7 @@ from edsnlp.core.registries import registry
 from biomedics.ner.reader import EdsMedicReader
 from biomedics.ner.scorer import EdsMedicScorer
 
-app = Cli(pretty_exceptions_show_locals=False)
+app = Cli()
 
 BASE_DIR = Path(__file__).parent.parent
 

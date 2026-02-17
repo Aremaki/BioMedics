@@ -7,7 +7,7 @@ from tomlkit import parse
 
 from biomedics import BASE_DIR
 
-app = Cli(pretty_exceptions_show_locals=False)
+app = Cli()
 
 DEFAULT_MODEL = BASE_DIR / "models" / "ner" / "expe_ner_final" / "model-last"
 

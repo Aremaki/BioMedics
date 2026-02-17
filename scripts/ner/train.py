@@ -37,7 +37,7 @@ from biomedics.ner.scorer import EdsMedicScorer
 
 BASE_DIR = Path.cwd()
 
-app = Cli(pretty_exceptions_show_locals=False)
+app = Cli()
 
 LOGGER_FIELDS = {
     "step": {},
