@@ -10,7 +10,7 @@ from confit import Cli
 
 from biomedics.normalization.fuzzy.main import FuzzyNormaliser
 
-app = Cli()
+app = Cli(pretty_exceptions_show_locals=False)
 
 
 @app.command(name="fuzzy_matching")

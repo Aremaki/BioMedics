@@ -22,7 +22,7 @@ from biomedics.normalization.embedding_similarity.text_preprocessor import (
     TextPreprocessor,
 )
 
-app = Cli()
+app = Cli(pretty_exceptions_show_locals=False)
 
 
 @app.command(name="classify_diso")

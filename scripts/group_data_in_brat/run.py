@@ -14,7 +14,7 @@ from spacy.tokens import Span
 
 from biomedics.ner.brat import BratConnector
 
-app = Cli()
+app = Cli(pretty_exceptions_show_locals=False)
 
 
 @app.command(name="group_brat")
@@ -36,22 +36,26 @@ def group_brat(
         res_drug_df = pd.read_pickle(
             Path(input_dir).parent / "pred_med_fuzzy_jaro_winkler.pkl"
         )
-        res_diso_df = pd.read_pickle(
-            Path(input_dir).parent / "pred_with_classified_diso.pkl"
-        )
+        classify_diso_path = Path(input_dir).parent / "pred_with_classified_diso.pkl"
+        if os.path.exists(classify_diso_path):
+            res_diso_df = pd.read_pickle(
+                Path(input_dir).parent / "pred_with_classified_diso.pkl"
+            )
 
-        # Process data
-        res_diso_df["annotation"] = "Body system : " + res_diso_df["labels"].astype(str)
-        res_diso_df["label"] = "DISO"
-        res_diso_df = res_diso_df[
-            [
-                "term",
-                "source",
-                "span_converted",
-                "label",
-                "annotation",
+            # Process data
+            res_diso_df["annotation"] = "Body system : " + res_diso_df["labels"].astype(
+                str
+            )
+            res_diso_df["label"] = "DISO"
+            res_diso_df = res_diso_df[
+                [
+                    "term",
+                    "source",
+                    "span_converted",
+                    "label",
+                    "annotation",
+                ]
             ]
-        ]
 
         res_drug_df["annotation"] = (
             "Match synonyme: "
@@ -106,7 +110,9 @@ def group_brat(
             ["term", "source", "span_converted", "label", "annotation"]
         ]
         res_df = pd.concat([res_bio_df, res_bio_comp])
-        res_df = pd.concat([res_df, res_drug_df, res_diso_df])
+        res_df = pd.concat([res_df, res_drug_df])
+        if os.path.exists(classify_diso_path):
+            res_df = pd.concat([res_df, res_diso_df])
 
         # Load NER data
         doc_list = BratConnector(Path(input_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore

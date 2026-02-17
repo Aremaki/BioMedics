@@ -62,8 +62,8 @@ Store the chosen model in the appropriate models folder used by the pipeline (e.
 ```shell
 python -c "from huggingface_hub import snapshot_download; \
 snapshot_download(
-    repo_id='cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR',
-    local_dir='models/word_embedding/SapBERT_all',
+    repo_id='GanjinZero/coder_all',
+    local_dir='models/word_embedding/coder_all',
     local_dir_use_symlinks=False
 )"
 ```
@@ -103,6 +103,8 @@ In the `infer` section:
 > ⚠️ Ensure there are as many output folders as input folders.
 In the `group_brat` section:
 - **output_dirs**: Specify the paths to the folders where BRAT will store the annotated results.
+
+**IMPORTANT**: The script might not detect the $vars.base_dire and $vars.root_dir. If you have errors, you can copy paste the path for each value of $vars in the config
 
 ## Step 5: Update the Shell Scripts
 
