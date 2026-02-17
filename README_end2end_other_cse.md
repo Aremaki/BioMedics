@@ -7,6 +7,7 @@ This guide will help you configure and run the end2end pipeline for your specifi
 - Clone the repository:
 ```shell
 git clone https://github.com/Aremaki/BioMedics.git
+cd BioMedics
 ```
 
 ## Step 2: Python environment
@@ -52,7 +53,7 @@ pip install edstoolbox==0.7.0
 You have two options:
 - **Train your own**: Train an NER + QUALIF model using your annotated dataset, following the instructions in the repository’s `README.md` under the **“NER + QUALIF”** section.
 
-- **Use an off-the-shelf model**: Request access to the finetuned **`eds-biomedics-v4`** model from the Data Science team
+- **Use an off-the-shelf model**: Request access to the finetuned **`eds-biomedics-v5`** model from the Data Science team
 
 Store the chosen model in the appropriate models folder used by the pipeline (e.g., `models/ner/` or the path referenced in your config).
 

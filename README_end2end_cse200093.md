@@ -8,13 +8,13 @@ Before running the pipeline, you must create and modify a configuration file.
 Navigate to the config directory:
 
 ```
-biomedics/configs/end2end/
+BioMedics/configs/end2end/
 ```
 
 Create a new config file or duplicate an existing one. For example:
 
 ```
-conf_study_cortico_v1.cfg
+config_end_to_end_cse200093_template.cfg
 ```
 
 ## Step 2: Set Input and Output Folders
@@ -28,19 +28,19 @@ In the `infer` section:
 
 Then in the `group_brat` section, you must also add the `output_dirs` paths, these paths should point to the BRAT data folders, for example:
 ```
-/export/home/cse200093/brat_data/BioMedics/study_cortico_GF/maladie_de_takayasu
+/export/home/cse200093/brat_data/BioMedics/<Your_Project_Name>
 ```
 
 ## Step 3: Update the Shell Scripts
 
-Next, ensure that all shell scripts use the correct configuration file.
-Navigate to the shell scripts directory:
+Next, ensure that the main shell script use the correct configuration file.
+Navigate to the shell script:
 
 ```
-biomedics/scripts/end2end/
+biomedics/scripts/end2end/run_end2end_public.sh
 ```
 
-Open each `.sh` file and replace the existing config reference with the name of your config file (e.g., `conf_study_cortico_v1`).
+Replace the existing config reference with the name of your config file (e.g., `conf_study_cortico_v1`).
 
 ## Step 4: Run the Pipeline
 
@@ -60,14 +60,3 @@ You can visualize your model predictions using the BRAT annotation tool.
 2. Navigate to the folder where you saved the model predictions (as defined in `group_brat`).
 
 This will allow you to inspect the annotated outputs directly in your browser.
-
-
-## Step 6: Optional: Use the Demo Notebook
-
-You can also explore and interact with the results using the demo notebook provided.
-
-Navigate to:
-
-```
-Demo.ipynb
-```
