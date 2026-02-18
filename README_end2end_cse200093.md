@@ -33,7 +33,7 @@ Once everything is configured, you can launch the pipeline by running:
 
 ```bash
 cd scripts/end2end
-export conifg="<Your_config_name>.cfg"
+export config="<Your_config_name>.cfg"
 bash run_end2end_cse200093.sh
 ```
 

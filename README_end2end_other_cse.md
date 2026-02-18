@@ -126,7 +126,7 @@ Example:
 Once everything is configured, you can launch the pipeline by running:
 
 ```bash
-export conifg="<Your_config_name>.cfg"
+export config="<Your_config_name>.cfg"
 bash run_end2end_other_cse.sh
 ```
 
