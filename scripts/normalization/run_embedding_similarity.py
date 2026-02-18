@@ -3,23 +3,41 @@ import os
 os.environ["OMP_NUM_THREADS"] = "16"
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 import edsnlp
 import pandas as pd
 from confit import Cli
 from edsnlp.connectors import BratConnector
+from spacy.tokens import Span
 
 from biomedics.normalization.embedding_similarity.main import get_embedding_similarity
 
 app = Cli(pretty_exceptions_show_locals=False)
 
 
+def _discover_brat_dirs(base_dir: Path) -> List[Path]:
+    if not base_dir.is_dir():
+        return []
+
+    discovered: List[Path] = []
+
+    if list(base_dir.glob("*.txt")):
+        discovered.append(base_dir)
+        return discovered
+
+    for candidate in base_dir.iterdir():
+        if candidate.is_dir() and list(candidate.glob("*.txt")):
+            discovered.append(candidate)
+
+    return sorted(discovered)
+
+
 @app.command(name="emdedding_similarity")
 def coder_inference_cli(
     *,
     model_path: Path,
-    input_dirs: List[Path],
+    input_folder: Path,
     umls_path: str,
     labels_column_name: str,
     synonyms_column_name: str,
@@ -41,14 +59,34 @@ def coder_inference_cli(
     remove_special_characters_terms: bool,
     remove_stopwords_umls: bool,
     remove_special_characters_umls: bool,
-    output_dirs: Optional[List[Path]] = None,
 ):
-    input_dirs = [input_dir.parent for input_dir in input_dirs]
-    if not output_dirs:
-        output_dirs = input_dirs.copy()
-    for input_dir, output_dir in zip(input_dirs, output_dirs):
-        if os.path.isfile(f"{input_dir}/pred_with_measurement.pkl"):
-            df = pd.read_pickle(f"{input_dir}/pred_with_measurement.pkl")
+    input_folder = Path(input_folder)
+    if not input_folder.is_dir():
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {input_folder}"
+        )
+
+    base_brat_dir = input_folder.parent / "pred_NER"
+    base_output_dir = input_folder.parent / "pred_NORM"
+
+    if not base_brat_dir.is_dir():
+        raise ValueError(
+            f"Expected BRAT prediction folder does not exist: {base_brat_dir}"
+        )
+
+    brat_dirs_to_process = _discover_brat_dirs(base_brat_dir)
+    if not brat_dirs_to_process:
+        raise ValueError(
+            f"No BRAT directories with .txt files found in {base_brat_dir}"
+        )
+
+    for brat_dir in brat_dirs_to_process:
+        relative_dir = brat_dir.relative_to(base_brat_dir)
+        output_dir = base_output_dir / relative_dir
+        measurement_pickle = output_dir / "pred_with_measurement.pkl"
+
+        if measurement_pickle.is_file():
+            df = pd.read_pickle(measurement_pickle)
             if column_name_to_normalize not in df.columns:
                 if "terms_linked_to_measurement" in df.columns:
                     df = df.explode("terms_linked_to_measurement")
@@ -60,7 +98,7 @@ def coder_inference_cli(
                 else:
                     df[column_name_to_normalize] = df.term_bio
         else:
-            doc_list = BratConnector(input_dir).brat2docs(edsnlp.blank("eds"))
+            doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))
             ents_list = []
             for doc in doc_list:
                 if label_to_normalize in doc.spans.keys():
@@ -72,6 +110,8 @@ def coder_inference_cli(
                             ent.text.lower().strip(),
                         ]
                         for qualifier in qualifiers:
+                            if not Span.has_extension(qualifier):
+                                Span.set_extension(qualifier, default=None)
                             ent_data.append(getattr(ent._, qualifier))
                         ents_list.append(ent_data)
             df_columns = [
@@ -87,7 +127,7 @@ def coder_inference_cli(
             model_path=model_path,
             cased=cased,
             stopwords=stopwords,
-            input_dirs=input_dirs,
+            input_dirs=[brat_dir],
             umls_path=umls_path,
             labels_column_name=labels_column_name,
             synonyms_column_name=synonyms_column_name,
@@ -106,9 +146,8 @@ def coder_inference_cli(
             remove_stopwords_umls=remove_stopwords_umls,
             remove_special_characters_umls=remove_special_characters_umls,
         )
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        df.to_pickle(f"{output_dir}/pred_bio_coder_all.pkl")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        df.to_pickle(output_dir / "pred_bio_norm.pkl")
 
 
 if __name__ == "__main__":

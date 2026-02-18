@@ -19,7 +19,6 @@ if [ -f "$VENV_PATH" ]; then
 else
 	echo "Warning: venv not found at $VENV_PATH"
 fi
-conda deactivate
 
 # Set config file path (override with first arg or existing env var `config`)
 config="${1:-${config:-../../configs/end2end/config_end_to_end_public.cfg}}"

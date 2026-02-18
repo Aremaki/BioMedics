@@ -1,7 +1,6 @@
 import os
 import time
 from pathlib import Path
-from typing import List
 
 import edsnlp
 import torch
@@ -14,12 +13,21 @@ from biomedics.ner.brat import BratConnector
 app = Cli(pretty_exceptions_show_locals=False)
 
 
+def ensure_empty_ann_files(folder: Path) -> int:
+    created = 0
+    for txt_file in folder.glob("*.txt"):
+        ann_file = txt_file.with_suffix(".ann")
+        if not ann_file.exists():
+            ann_file.touch()
+            created += 1
+    return created
+
+
 @app.command(name="infer", registry=registry)
 def infer(
     *,
-    input_folders: List[Path],
+    input_folder: Path,
     model_path: Path,
-    output_folders: List[Path],
     quantize: bool = False,
 ):
     total_docs = 0
@@ -59,10 +67,58 @@ def infer(
     nlp = edsnlp.load(model_path, overrides=overrides).to(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
-    for input_folder, output_folder in zip(input_folders, output_folders):
-        assert os.path.isdir(input_folder)
-        print(f"Input format is BRAT in {input_folder}")
-        input_brat = BratConnector(input_folder)
+    base_input_folder = Path(input_folder)
+    if not os.path.isdir(base_input_folder):
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {base_input_folder}"
+        )
+
+    base_output_folder = base_input_folder.parent / "pred_NER"
+    base_output_folder.mkdir(parents=True, exist_ok=True)
+
+    base_txt_files = list(base_input_folder.glob("*.txt"))
+    subfolders = [
+        path
+        for path in base_input_folder.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
+    ]
+    has_base_txt = len(base_txt_files) > 0
+    has_subfolders = len(subfolders) > 0
+
+    if has_base_txt and has_subfolders:
+        raise ValueError(
+            "Invalid input structure for "
+            f"{base_input_folder}: expected either .txt files only in the base "
+            "folder (no subfolders), or subfolders only (no base .txt files)."
+        )
+
+    if not has_base_txt and not has_subfolders:
+        raise ValueError(f"{base_input_folder} is empty.")
+
+    if has_base_txt:
+        print(f"Processing base folder: {base_input_folder}")
+        subfolders = [base_input_folder]  # Process base folder only, no subfolders
+
+    for current_input_folder in subfolders:
+        print(f"Processing folder: {current_input_folder}")
+        relative_folder = current_input_folder.relative_to(base_input_folder)
+        output_folder = base_output_folder / relative_folder
+
+        txt_files = list(current_input_folder.glob("*.txt"))
+        if not txt_files:
+            print(f"Skipping {current_input_folder}: no .txt files found")
+            continue
+
+        output_folder.mkdir(parents=True, exist_ok=True)
+
+        created_ann_count = ensure_empty_ann_files(current_input_folder)
+        if created_ann_count > 0:
+            print(
+                f"Created {created_ann_count} empty .ann file(s) in {current_input_folder}"
+            )
+
+        print(f"Input format is BRAT in {current_input_folder}")
+        input_brat = BratConnector(current_input_folder)
         input_docs = list(input_brat.brat2docs(nlp))  # type: ignore
 
         total_docs += len(input_docs)

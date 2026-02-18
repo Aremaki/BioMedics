@@ -27,6 +27,12 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
    source .venv/bin/activate
    ```
 
+- Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
+
+```shell
+pip install edstoolbox==0.7.0
+```
+
 - Install [Poetry](https://python-poetry.org/) (a tool for dependency management and packaging in Python) with the following command line:
    ```shell
    pip install poetry==1.5.1
@@ -40,12 +46,6 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
    poetry install
    pip uninstall pypandoc
    ```
-
-- Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
-
-```shell
-pip install edstoolbox==0.7.0
-```
 
 ## Step 3: Download models and data
 
@@ -63,8 +63,8 @@ Store the chosen model in the appropriate models folder used by the pipeline (e.
 ```shell
 python -c "from huggingface_hub import snapshot_download; \
 snapshot_download(
-    repo_id='GanjinZero/coder_all',
-    local_dir='models/word_embedding/coder_all',
+    repo_id='cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR',
+    local_dir='models/word_embedding/sapbert_all',
     local_dir_use_symlinks=False
 )"
 ```
@@ -86,47 +86,56 @@ Navigate to the config directory:
 biomedics/configs/end2end/
 ```
 
-Create a new config file or duplicate an existing one. You can use the following template:
+Create a new config file from the following template:
 
 ```
-config_end_to_end_public.cfg
+config_end_to_end_other_cse.cfg
 ```
 
-In your configuration file, set the following paths:
+In your configuration file (`vars` section), set:
 
-In the `vars` section:
-- **root_dir**: "/export/home/<YOUR_CSE>"
-- **base_dir**: Path to BioMedics folder
-In the `infer` section:
-- **input folders**: Specify the path to the folders containing your CRH files in `.txt` format.
-   > **Note:** Each folder must also include an empty `.ann` file for every `.txt` document.
-- **output folders**: Path to an empty folder where the results will be stored.
-> ⚠️ Ensure there are as many output folders as input folders.
-In the `group_brat` section:
-- **output_dirs**: Specify the paths to the folders where BRAT will store the annotated results.
+- **input_folder**: Path to the folder containing the CRH `.txt` files (subfolders are allowed).
+- **ner_model_path**: Path to the BioMedics NER model.
+- **normalization_model_path**: Path to the Normalization model (sapbert_all).
+- **drug_dict_path**: Path to the BioMedics drug dictionary (data/drug_knowledge/final_dict.pkl).
+- **lab_test_termino_path**: Only the name of your lab test dictionary downloaded from UMLS (lab_snomed_ct_<year><version>.csv).
+- **brat_config_path**: Path to the BRAT config (configs/brat_data)
+- **brat_output_folder**: Path to a folder inside `brat_data` where BRAT files will be saved.
 
-**IMPORTANT**: The script might not detect the $vars.base_dire and $vars.root_dir. If you have errors, you can copy paste the path for each value of $vars in the config
+## Step 5: Update the Slurm files with your own GPU parameters
 
-## Step 5: Update the Shell Scripts
-
-Next, ensure that the main shell script use the correct configuration file.
-Navigate to the shell script:
+Depending on what GPU you have access to, you may need to update the slurm files. Navigate to the slurm scripts:
 
 ```
-biomedics/scripts/end2end/run_end2end_public.sh
+cd scripts/end2end
 ```
 
-Replace the existing config reference with the name of your config file (e.g., `conf_study_cortico_v1`).
+For each file `*.slurm``, update the SLURM parameters if needed.
 
+Example:
+
+```bash
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:a100:1
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=64G
+#SBATCH --time=08:00:00
+```
 ## Step 6: Run the Pipeline
 
 Once everything is configured, you can launch the pipeline by running:
 
 ```bash
-bash run_end2end_public.sh
+export conifg="<Your_config_name>.cfg"
+bash run_end2end_other_cse.sh
 ```
 
 ## Step 7: Visualize the Results in BRAT
+
+When you run the algorithm, it will:
+
+1. Save all predictions as tables in a folder called `pred_NORM` at the root of the input folder.
+2. Save all predictions in BRAT format in the specified BRAT output folder with NER and NORM.
 
 You can visualize your model predictions using the BRAT annotation tool.
 

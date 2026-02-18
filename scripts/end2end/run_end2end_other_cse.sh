@@ -1,7 +1,12 @@
 #!/bin/bash
-# Set config file path (override with first arg or existing env var `config`)
-config="${1:-${config:-../../configs/end2end/config_end_to_end_public.cfg}}"
+
+# If the user didn't set $config, use a default name
+config_name="${config:-config_test}"
+
+# Build the full path automatically
+config="../../configs/end2end/${config_name}"
 export config
+
 # Ensure logs directory exists for SLURM and other logs
 mkdir -p logs
 
@@ -19,9 +24,6 @@ if [ -f "$VENV_PATH" ]; then
 else
     echo "Warning: venv not found at $VENV_PATH"
 fi
-
-
-
 
 #######################
 ## NER + Qualif

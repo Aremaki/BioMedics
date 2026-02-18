@@ -1,4 +1,17 @@
 #!/bin/bash
+
+# If the user didn't set $config, use a default name
+config_name="${config:-config_test}"
+
+# Build the full path automatically
+config="../../configs/end2end/${config_name}"
+export config
+
+# Ensure logs directory exists for SLURM and other logs
+mkdir -p logs
+
+echo "Using config: $config"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 BIOMEDICS_ROOT="${BIOMEDICS_ROOT:-$(cd "$SCRIPTS_DIR/.." && pwd)}"
@@ -11,16 +24,6 @@ if [ -f "$VENV_PATH" ]; then
 else
     echo "Warning: venv not found at $VENV_PATH"
 fi
-
-# Set config file path (override with first arg or existing env var `config`)
-config="${1:-${config:-../../configs/end2end/config_patient_similarity.cfg}}"
-export config
-
-# Ensure logs directory exists for SLURM and other logs
-mkdir -p logs
-
-echo "Using config: $config"
-
 
 #######################
 ## NER + Qualif
@@ -162,7 +165,7 @@ echo "Job $JOB_ID finished."
 ## FETCH OUTCOMES
 #######################
 
-eds-toolbox spark submit --config "$config" --log-path logs/ ../treatments_lab_tests_outcomes/run.py
+# eds-toolbox spark submit --config "$config" --log-path logs/ ../treatments_lab_tests_outcomes/run.py
 
 #######################
 ## GROUP ALL IN BRAT

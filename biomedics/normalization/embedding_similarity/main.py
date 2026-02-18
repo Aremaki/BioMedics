@@ -52,7 +52,7 @@ def get_embedding_similarity(
 
     # Preprocess UMLS
     print("--- Preprocessing UMLS ---")
-    umls_df = pd.read_pickle(BASE_DIR / "data" / "umls" / umls_path)
+    umls_df = pd.read_csv(BASE_DIR / "data" / "umls" / umls_path)
     umls_df[synonyms_column_name] = umls_df[synonyms_column_name].apply(
         lambda term: text_preprocessor(
             text=term,

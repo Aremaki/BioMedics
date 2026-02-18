@@ -3,7 +3,7 @@ import os
 os.environ["OMP_NUM_THREADS"] = "16"
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 import edsnlp
 import pandas as pd
@@ -25,16 +25,32 @@ from biomedics.normalization.embedding_similarity.text_preprocessor import (
 app = Cli(pretty_exceptions_show_locals=False)
 
 
+def _discover_brat_dirs(base_dir: Path) -> List[Path]:
+    if not base_dir.is_dir():
+        return []
+
+    discovered: List[Path] = []
+
+    if list(base_dir.glob("*.txt")):
+        discovered.append(base_dir)
+        return discovered
+
+    for candidate in base_dir.iterdir():
+        if candidate.is_dir() and list(candidate.glob("*.txt")):
+            discovered.append(candidate)
+
+    return sorted(discovered)
+
+
 @app.command(name="classify_diso")
 def classify_diso_cli(
     *,
     classif_model_path: str,
     labels_path: str,
     embedding_model_path: str,
-    brat_dirs: List[Path],
+    input_folder: Path,
     stopwords: List[str],
     qualifiers: List[str],
-    output_dirs: Optional[List[Path]] = None,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -53,10 +69,30 @@ def classify_diso_cli(
     ).to(device)  # type: ignore
     tokenizer = CamembertTokenizer.from_pretrained(classif_model_path)
 
+    input_folder = Path(input_folder)
+    if not input_folder.is_dir():
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {input_folder}"
+        )
+
+    base_brat_dir = input_folder.parent / "pred_NER"
+    base_output_dir = input_folder.parent / "pred_NORM"
+
+    if not base_brat_dir.is_dir():
+        raise ValueError(
+            f"Expected BRAT prediction folder does not exist: {base_brat_dir}"
+        )
+
+    brat_dirs_to_process = _discover_brat_dirs(base_brat_dir)
+    if not brat_dirs_to_process:
+        raise ValueError(
+            f"No BRAT directories with .txt files found in {base_brat_dir}"
+        )
+
     # Load Data
-    if not output_dirs:
-        output_dirs = [brat_dir.parent for brat_dir in brat_dirs]
-    for brat_dir, output_dir in zip(brat_dirs, output_dirs):
+    for brat_dir in brat_dirs_to_process:
+        relative_dir = brat_dir.relative_to(base_brat_dir)
+        output_dir = base_output_dir / relative_dir
         docs = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
         docs = edsnlp.data.from_iterable(docs)  # type: ignore
 
@@ -133,13 +169,11 @@ def classify_diso_cli(
         results["labels"] = labels
         results["scores"] = scores
 
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        results.to_pickle(f"{output_dir}/pred_with_classified_diso.pkl")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
 
-        all_terms = results[["normalized_term", "labels", "scores"]].drop_duplicates(
-            subset="normalized_term"
-        )
+        all_terms = results[["normalized_term", "labels", "scores"]]
+        all_terms = all_terms[~all_terms["normalized_term"].duplicated()]
         predicted_entities = all_terms["normalized_term"].tolist()
 
         embedding_normalizer = EmbeddingNormalizer(
@@ -161,7 +195,7 @@ def classify_diso_cli(
         result_embedding["normalized_term"] = predicted_entities
         result_embedding["labels"] = all_terms["labels"]
         result_embedding["scores"] = all_terms["scores"]
-        result_embedding.to_pickle(f"{output_dir}/pred_diso_embedding.pkl")
+        result_embedding.to_pickle(output_dir / "pred_diso_embedding.pkl")
 
 
 if __name__ == "__main__":

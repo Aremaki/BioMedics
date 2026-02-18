@@ -4,7 +4,7 @@ os.environ["OMP_NUM_THREADS"] = "16"
 
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Tuple
 
 import edsnlp
 import numpy as np
@@ -17,29 +17,70 @@ from biomedics.ner.brat import BratConnector
 app = Cli(pretty_exceptions_show_locals=False)
 
 
+def _discover_ner_norm_dirs(
+    ner_dir: Path, norm_dir: Path
+) -> Tuple[List[Path], List[Path]]:
+    if not ner_dir.is_dir():
+        return [], []
+
+    ner_discovered: List[Path] = []
+    norm_discovered: List[Path] = []
+
+    if list(ner_dir.glob("*.txt")):
+        ner_discovered.append(ner_dir)
+        norm_discovered.append(norm_dir)
+        return ner_discovered, norm_discovered
+
+    for candidate in ner_dir.iterdir():
+        if candidate.is_dir() and list(candidate.glob("*.txt")):
+            ner_discovered.append(candidate)
+            norm_discovered.append(norm_dir / candidate.name)
+
+    return sorted(ner_discovered), sorted(norm_discovered)
+
+
 @app.command(name="group_brat")
 def group_brat(
     *,
-    input_dirs: List[Path],
+    input_folder: Path,
     conf_path: Path,
-    output_dirs: Optional[List[Path]] = None,
+    output_folder: Path,
 ):
     np.random.seed(42)
 
-    if not output_dirs:
-        output_dirs = [
-            Path(f"export/home/brat_data/test_demo/test_{i+1}")
-            for i in range(len(input_dirs))
-        ]
-    for input_dir, output_dir in zip(input_dirs, output_dirs):
-        res_bio_df = pd.read_pickle(Path(input_dir).parent / "pred_bio_coder_all.pkl")
-        res_drug_df = pd.read_pickle(
-            Path(input_dir).parent / "pred_med_fuzzy_jaro_winkler.pkl"
+    input_folder = Path(input_folder)
+    if not input_folder.is_dir():
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {input_folder}"
         )
-        classify_diso_path = Path(input_dir).parent / "pred_with_classified_diso.pkl"
+
+    base_ner_dir = input_folder.parent / "pred_NER"
+    base_norm_dir = input_folder.parent / "pred_NORM"
+
+    if not base_ner_dir.is_dir():
+        raise ValueError(
+            f"Expected BRAT prediction folder does not exist: {base_ner_dir}"
+        )
+    if not base_norm_dir.is_dir():
+        raise ValueError(
+            f"Expected Normalization folder does not exist: {base_norm_dir}"
+        )
+
+    ner_dir_to_process, norm_dir_to_process = _discover_ner_norm_dirs(
+        base_ner_dir, base_norm_dir
+    )
+    if not ner_dir_to_process:
+        raise ValueError(
+            f"No BRAT directories with .txt files found in {ner_dir_to_process}"
+        )
+
+    for ner_dir, norm_dir in zip(ner_dir_to_process, norm_dir_to_process):
+        res_bio_df = pd.read_pickle(Path(norm_dir) / "pred_bio_norm.pkl")
+        res_drug_df = pd.read_pickle(Path(norm_dir) / "pred_med_norm.pkl")
+        classify_diso_path = Path(norm_dir) / "pred_with_classified_diso.pkl"
         if os.path.exists(classify_diso_path):
             res_diso_df = pd.read_pickle(
-                Path(input_dir).parent / "pred_with_classified_diso.pkl"
+                Path(norm_dir) / "pred_with_classified_diso.pkl"
             )
 
             # Process data
@@ -115,7 +156,7 @@ def group_brat(
             res_df = pd.concat([res_df, res_diso_df])
 
         # Load NER data
-        doc_list = BratConnector(Path(input_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore
+        doc_list = BratConnector(Path(ner_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore
         docs = edsnlp.data.from_iterable(doc_list)  # type: ignore
 
         # Add Annotations
@@ -159,6 +200,9 @@ def group_brat(
         )
         docs = docs.map_pipeline(nlp)
 
+        # Save in BRAT format
+        relative_dir = ner_dir.relative_to(base_ner_dir)
+        output_dir = output_folder / relative_dir
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.makedirs(output_dir)
