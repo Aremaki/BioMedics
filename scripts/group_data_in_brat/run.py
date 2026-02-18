@@ -61,10 +61,6 @@ def group_brat(
         raise ValueError(
             f"Expected BRAT prediction folder does not exist: {base_ner_dir}"
         )
-    if not base_norm_dir.is_dir():
-        raise ValueError(
-            f"Expected Normalization folder does not exist: {base_norm_dir}"
-        )
 
     ner_dir_to_process, norm_dir_to_process = _discover_ner_norm_dirs(
         base_ner_dir, base_norm_dir
@@ -75,9 +71,10 @@ def group_brat(
         )
 
     for ner_dir, norm_dir in zip(ner_dir_to_process, norm_dir_to_process):
-        res_bio_df = pd.read_pickle(Path(norm_dir) / "pred_bio_norm.pkl")
-        res_drug_df = pd.read_pickle(Path(norm_dir) / "pred_med_norm.pkl")
+        drug_norm_path = Path(norm_dir) / "pred_med_norm.pkl"
+        bio_norm_path = Path(norm_dir) / "pred_bio_norm.pkl"
         classify_diso_path = Path(norm_dir) / "pred_with_classified_diso.pkl"
+        res_dfs = []
         if os.path.exists(classify_diso_path):
             res_diso_df = pd.read_pickle(
                 Path(norm_dir) / "pred_with_classified_diso.pkl"
@@ -97,63 +94,71 @@ def group_brat(
                     "annotation",
                 ]
             ]
+            res_dfs.append(res_diso_df)
 
-        res_drug_df["annotation"] = (
-            "Match synonyme: "
-            + res_drug_df["norm_term"].astype(str)
-            + " |ATC codes: "
-            + res_drug_df["label"].astype(str)
-        )
-        res_drug_df["label"] = "Chemical_and_drugs"
-        res_drug_df = res_drug_df[
-            [
-                "term",
-                "source",
-                "span_converted",
-                "label",
-                "annotation",
+        if os.path.exists(drug_norm_path):
+            res_drug_df = pd.read_pickle(drug_norm_path)
+            res_drug_df["annotation"] = (
+                "Match synonyme: "
+                + res_drug_df["norm_term"].astype(str)
+                + " |ATC codes: "
+                + res_drug_df["label"].astype(str)
+            )
+            res_drug_df["label"] = "Chemical_and_drugs"
+            res_drug_df = res_drug_df[
+                [
+                    "term",
+                    "source",
+                    "span_converted",
+                    "label",
+                    "annotation",
+                ]
             ]
-        ]
+            res_dfs.append(res_drug_df)
+        if os.path.exists(bio_norm_path):
+            res_bio_df = pd.read_pickle(bio_norm_path)
+            res_bio_comp = res_bio_df.copy()
+            res_bio_comp["annotation"] = (
+                "Value: "
+                + res_bio_comp["value_cleaned"].astype(str)
+                + " |Unit: "
+                + res_bio_comp["unit"].astype(str)
+                + " |Range value: "
+                + res_bio_comp["range_value"].astype(str)
+                + " |Comment: "
+                + res_bio_comp["non_digit_value"].astype(str)
+            )
+            res_bio_comp["label"] = "BIO_comp"
+            res_bio_comp["term"] = res_bio_comp["term_biocomp"]
+            res_bio_comp["span_converted"] = res_bio_comp.apply(
+                lambda row: [int(row.span_start), int(row.span_end)], axis=1
+            )
+            res_bio_comp = res_bio_comp[
+                ["term", "source", "span_converted", "label", "annotation"]
+            ]
 
-        res_bio_comp = res_bio_df.copy()
-        res_bio_comp["annotation"] = (
-            "Value: "
-            + res_bio_comp["value_cleaned"].astype(str)
-            + " |Unit: "
-            + res_bio_comp["unit"].astype(str)
-            + " |Range value: "
-            + res_bio_comp["range_value"].astype(str)
-            + " |Comment: "
-            + res_bio_comp["non_digit_value"].astype(str)
-        )
-        res_bio_comp["label"] = "BIO_comp"
-        res_bio_comp["term"] = res_bio_comp["term_biocomp"]
-        res_bio_comp["span_converted"] = res_bio_comp.apply(
-            lambda row: [int(row.span_start), int(row.span_end)], axis=1
-        )
-        res_bio_comp = res_bio_comp[
-            ["term", "source", "span_converted", "label", "annotation"]
-        ]
+            res_bio_df = res_bio_df[~res_bio_df.span_start_bio.isna()]
+            res_bio_df["annotation"] = (
+                "Match synonyme: "
+                + res_bio_df["norm_term"].astype(str)
+                + " |CUI code: "
+                + res_bio_df["label"].astype(str)
+            )
+            res_bio_df["label"] = "BIO"
+            res_bio_df["term"] = res_bio_df["term_bio"]
+            res_bio_df["span_converted"] = res_bio_df.apply(
+                lambda row: [int(row.span_start_bio), int(row.span_end_bio)], axis=1
+            )
+            res_bio_df = res_bio_df[
+                ["term", "source", "span_converted", "label", "annotation"]
+            ]
+            res_dfs.append(res_bio_df)
+            res_dfs.append(res_bio_comp)
 
-        res_bio_df = res_bio_df[~res_bio_df.span_start_bio.isna()]
-        res_bio_df["annotation"] = (
-            "Match synonyme: "
-            + res_bio_df["norm_term"].astype(str)
-            + " |CUI code: "
-            + res_bio_df["label"].astype(str)
-        )
-        res_bio_df["label"] = "BIO"
-        res_bio_df["term"] = res_bio_df["term_bio"]
-        res_bio_df["span_converted"] = res_bio_df.apply(
-            lambda row: [int(row.span_start_bio), int(row.span_end_bio)], axis=1
-        )
-        res_bio_df = res_bio_df[
-            ["term", "source", "span_converted", "label", "annotation"]
-        ]
-        res_df = pd.concat([res_bio_df, res_bio_comp])
-        res_df = pd.concat([res_df, res_drug_df])
-        if os.path.exists(classify_diso_path):
-            res_df = pd.concat([res_df, res_diso_df])
+        if res_dfs:
+            res_df = pd.concat(res_dfs)
+        else:
+            res_df = None
 
         # Load NER data
         doc_list = BratConnector(Path(ner_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore
@@ -162,14 +167,15 @@ def group_brat(
         # Add Annotations
         if not Span.has_extension("note"):
             Span.set_extension("note", default=None)
-        for doc in doc_list:
-            source = doc._.note_id + ".ann"
-            res_norm = res_df[res_df.source == source]
-            for row in res_norm.itertuples():
-                for ent in doc.spans[row.label]:
-                    if [ent.start_char, ent.end_char] == row.span_converted:
-                        ent._.note = row.annotation
-                        break
+        if res_df is not None:
+            for doc in doc_list:
+                source = doc._.note_id + ".ann"
+                res_norm = res_df[res_df.source == source]
+                for row in res_norm.itertuples():  # type: ignore
+                    for ent in doc.spans[row.label]:
+                        if [ent.start_char, ent.end_char] == row.span_converted:
+                            ent._.note = row.annotation
+                            break
 
         # Add Relation
         scheme = {
