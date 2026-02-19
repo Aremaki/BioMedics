@@ -147,7 +147,8 @@ def coder_inference_cli(
             remove_special_characters_umls=remove_special_characters_umls,
         )
         output_dir.mkdir(parents=True, exist_ok=True)
-        df.to_pickle(output_dir / "pred_bio_norm.pkl")
+        if df is not None:
+            df.to_pickle(output_dir / "pred_bio_norm.pkl")
 
 
 if __name__ == "__main__":

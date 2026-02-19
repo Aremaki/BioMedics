@@ -80,71 +80,84 @@ def get_embedding_similarity(
 
     # Preprocessing and inference on terms
     print("--- Preprocessing terms ---")
-    if type(df[column_name_to_normalize].iloc[0]) is str:
-        data_list = (
-            df[column_name_to_normalize]
-            .apply(
-                lambda term: text_preprocessor(
-                    text=term,
-                    remove_stopwords=remove_stopwords_terms,
-                    remove_special_characters=remove_special_characters_terms,
+    if not df.empty and column_name_to_normalize in df.columns:
+        if isinstance(df[column_name_to_normalize].iloc[0], str):
+            data_list = (
+                df[column_name_to_normalize]
+                .apply(
+                    lambda term: text_preprocessor(
+                        text=term,
+                        remove_stopwords=remove_stopwords_terms,
+                        remove_special_characters=remove_special_characters_terms,
+                    )
                 )
+                .tolist()
             )
-            .tolist()
-        )
-        print("--- MODEL inference ---")
-        res = embedding_normalizer(
-            umls_labels_list=umls_labels_list,
-            umls_des_list=umls_des_list,
-            data_list=data_list,
-            save_umls_embeddings_dir=save_umls_embeddings_dir,
-            save_data_embeddings_dir=save_data_embeddings_dir,
-            normalize=normalize,
-            summary_method=summary_method,
-            tqdm_bar=tqdm_bar,
-            batch_size=batch_size,
-        )
-        df[["label", "norm_term", "score"]] = pd.DataFrame(zip(*res))
+            print("--- MODEL inference ---")
+            res = embedding_normalizer(
+                umls_labels_list=umls_labels_list,
+                umls_des_list=umls_des_list,
+                data_list=data_list,
+                save_umls_embeddings_dir=save_umls_embeddings_dir,
+                save_data_embeddings_dir=save_data_embeddings_dir,
+                normalize=normalize,
+                summary_method=summary_method,
+                tqdm_bar=tqdm_bar,
+                batch_size=batch_size,
+            )
+            df[["label", "norm_term", "score"]] = pd.DataFrame(zip(*res))
+        else:
+            exploded_term_df = (
+                pd.DataFrame(
+                    {
+                        "id": df.index,
+                        column_name_to_normalize: df[column_name_to_normalize],
+                    }
+                )
+                .explode(column_name_to_normalize)
+                .reset_index(drop=True)
+            )
+            data_list = (
+                exploded_term_df[column_name_to_normalize]
+                .apply(
+                    lambda term: text_preprocessor(
+                        text=term,
+                        remove_stopwords=remove_stopwords_terms,
+                        remove_special_characters=remove_special_characters_terms,
+                    )
+                )
+                .tolist()
+            )
+            print("--- MODEL inference ---")
+            res = embedding_normalizer(
+                umls_labels_list=umls_labels_list,
+                umls_des_list=umls_des_list,
+                data_list=data_list,
+                save_umls_embeddings_dir=save_umls_embeddings_dir,
+                save_data_embeddings_dir=save_data_embeddings_dir,
+                normalize=normalize,
+                summary_method=summary_method,
+                tqdm_bar=tqdm_bar,
+                batch_size=batch_size,
+            )
+            exploded_term_df[["label", "norm_term", "score"]] = pd.DataFrame(zip(*res))
+            df = (
+                pd.merge(
+                    df.drop(columns=[column_name_to_normalize]),
+                    exploded_term_df,
+                    left_index=True,
+                    right_on="id",
+                )
+                .drop(columns=["id"])
+                .reset_index(drop=True)
+            )
+        return df
     else:
-        exploded_term_df = (
-            pd.DataFrame(
-                {"id": df.index, column_name_to_normalize: df[column_name_to_normalize]}
+        if df.empty:
+            print("The dataframe is empty. No normalization will be performed.")
+            return None
+        else:
+            print(
+                f"The column {column_name_to_normalize} is not in the dataframe. No normalization will be performed."
             )
-            .explode(column_name_to_normalize)
-            .reset_index(drop=True)
-        )
-        data_list = (
-            exploded_term_df[column_name_to_normalize]
-            .apply(
-                lambda term: text_preprocessor(
-                    text=term,
-                    remove_stopwords=remove_stopwords_terms,
-                    remove_special_characters=remove_special_characters_terms,
-                )
-            )
-            .tolist()
-        )
-        print("--- MODEL inference ---")
-        res = embedding_normalizer(
-            umls_labels_list=umls_labels_list,
-            umls_des_list=umls_des_list,
-            data_list=data_list,
-            save_umls_embeddings_dir=save_umls_embeddings_dir,
-            save_data_embeddings_dir=save_data_embeddings_dir,
-            normalize=normalize,
-            summary_method=summary_method,
-            tqdm_bar=tqdm_bar,
-            batch_size=batch_size,
-        )
-        exploded_term_df[["label", "norm_term", "score"]] = pd.DataFrame(zip(*res))
-        df = (
-            pd.merge(
-                df.drop(columns=[column_name_to_normalize]),
-                exploded_term_df,
-                left_index=True,
-                right_on="id",
-            )
-            .drop(columns=["id"])
-            .reset_index(drop=True)
-        )
-    return df
+            return None
