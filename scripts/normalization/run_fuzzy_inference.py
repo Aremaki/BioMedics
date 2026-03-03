@@ -65,18 +65,20 @@ def normalize_med_cli(
     for brat_dir in brat_dirs_to_process:
         relative_dir = brat_dir.relative_to(base_brat_dir)
         output_folder = base_output_dir / relative_dir
-
-        normaliser = FuzzyNormaliser(
-            str(brat_dir),
-            drug_dict,
-            label_to_normalize,
-            qualifiers,
-            method=method,
-            atc_len=7,
-        )
-        df = normaliser.normalize(threshold=threshold)  # type: ignore
-        output_folder.mkdir(parents=True, exist_ok=True)
-        df.to_pickle(output_folder / "pred_med_norm.pkl")
+        try:
+            normaliser = FuzzyNormaliser(
+                str(brat_dir),
+                drug_dict,
+                label_to_normalize,
+                qualifiers,
+                method=method,
+                atc_len=7,
+            )
+            df = normaliser.normalize(threshold=threshold)  # type: ignore
+            output_folder.mkdir(parents=True, exist_ok=True)
+            df.to_pickle(output_folder / "pred_med_norm.pkl")
+        except Exception as e:
+            print(f"Drug Norm SKIPPED for {brat_dir}, error: {e}")
 
 
 if __name__ == "__main__":

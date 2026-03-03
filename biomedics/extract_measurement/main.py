@@ -160,8 +160,11 @@ def convert_brat_to_spark(spark, brat_dir, labels):
     df["span_end"] = df["span_converted"].str.get(1)
     df["lexical_variant"] = df["term"].copy()
     df = df[["term", "lexical_variant", "source", "span_start", "span_end", "label"]]
-    spark_df = spark.createDataFrame(df)
-    return spark_df
+    if df.empty:
+        logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED for {brat_dir}. ")
+        return None
+    else:
+        return spark.createDataFrame(df)
 
 
 def match_bio_to_biocomp(df_bio, df_biocomp):
@@ -518,6 +521,8 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     all_labels = [label_key] + labels_to_remove
 
     df_ents_sparks = convert_brat_to_spark(spark, brat_dir, all_labels)
+    if df_ents_sparks is None:
+        return None
     df_ents_bio_comp = df_ents_sparks.filter(F.col("label") == label_key)  # type: ignore
     df_ents_bio = df_ents_sparks.filter(F.col("label").isin(labels_to_remove))  # type: ignore
     end_t1 = time.time()

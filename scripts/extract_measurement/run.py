@@ -59,7 +59,10 @@ def run(spark, sql, config):
         relative_dir = brat_dir.relative_to(base_brat_dir)
         output_dir = base_output_dir / relative_dir
         output_dir.mkdir(parents=True, exist_ok=True)
-        bio_post_processing(spark, script_config, brat_dir, output_dir)
+        try:
+            bio_post_processing(spark, script_config, brat_dir, output_dir)
+        except Exception as e:
+            logger.exception(f"Extract Measurement failed for {brat_dir}, error: {e}")
 
 
 if __name__ == "__main__":

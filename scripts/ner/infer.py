@@ -101,74 +101,77 @@ def infer(
 
     for current_input_folder in subfolders:
         print(f"Processing folder: {current_input_folder}")
-        relative_folder = current_input_folder.relative_to(base_input_folder)
-        output_folder = base_output_folder / relative_folder
+        try:
+            relative_folder = current_input_folder.relative_to(base_input_folder)
+            output_folder = base_output_folder / relative_folder
 
-        txt_files = list(current_input_folder.glob("*.txt"))
-        if not txt_files:
-            print(f"Skipping {current_input_folder}: no .txt files found")
-            continue
+            txt_files = list(current_input_folder.glob("*.txt"))
+            if not txt_files:
+                print(f"Skipping {current_input_folder}: no .txt files found")
+                continue
 
-        output_folder.mkdir(parents=True, exist_ok=True)
+            output_folder.mkdir(parents=True, exist_ok=True)
 
-        created_ann_count = ensure_empty_ann_files(current_input_folder)
-        if created_ann_count > 0:
-            print(
-                f"Created {created_ann_count} empty .ann file(s) in {current_input_folder}"
+            created_ann_count = ensure_empty_ann_files(current_input_folder)
+            if created_ann_count > 0:
+                print(
+                    f"Created {created_ann_count} empty .ann file(s) in {current_input_folder}"
+                )
+
+            print(f"Input format is BRAT in {current_input_folder}")
+            input_brat = BratConnector(current_input_folder)
+            input_docs = list(input_brat.brat2docs(nlp))  # type: ignore
+
+            total_docs += len(input_docs)
+            print("Number of docs:", len(input_docs))
+
+            for doc in input_docs:
+                doc.ents = []
+                doc.spans.clear()
+
+            predicted = []
+
+            nlp.batch_size = 1
+
+            for doc in tqdm(nlp.pipe(input_docs), total=len(input_docs)):
+                doc.user_data = {
+                    k: v
+                    for k, v in doc.user_data.items()
+                    if "note_id" in k
+                    or "context" in k
+                    or "split" in k
+                    or "Action" in k
+                    or "Allergie" in k
+                    or "Certainty" in k
+                    or "Temporality" in k
+                    or "Family" in k
+                    or "Negation" in k
+                    or "RefTemp" in k
+                    or "AttDate" in k
+                }
+                predicted.append(doc)
+
+            edsnlp.data.write_standoff(  # type: ignore
+                predicted,
+                output_folder,
+                overwrite=True,
+                span_getter=["*"],
+                span_attributes=[
+                    "Negation",
+                    "Family",
+                    "Temporality",
+                    "Certainty",
+                    "Action",
+                    "Allergie",
+                    "RefTemp",
+                    "AttDate",
+                ],
             )
-
-        print(f"Input format is BRAT in {current_input_folder}")
-        input_brat = BratConnector(current_input_folder)
-        input_docs = list(input_brat.brat2docs(nlp))  # type: ignore
-
-        total_docs += len(input_docs)
-        print("Number of docs:", len(input_docs))
-
-        for doc in input_docs:
-            doc.ents = []
-            doc.spans.clear()
-
-        predicted = []
-
-        nlp.batch_size = 1
-
-        for doc in tqdm(nlp.pipe(input_docs), total=len(input_docs)):
-            doc.user_data = {
-                k: v
-                for k, v in doc.user_data.items()
-                if "note_id" in k
-                or "context" in k
-                or "split" in k
-                or "Action" in k
-                or "Allergie" in k
-                or "Certainty" in k
-                or "Temporality" in k
-                or "Family" in k
-                or "Negation" in k
-                or "RefTemp" in k
-                or "AttDate" in k
-            }
-            predicted.append(doc)
-
-        edsnlp.data.write_standoff(  # type: ignore
-            predicted,
-            output_folder,
-            overwrite=True,
-            span_getter=["*"],
-            span_attributes=[
-                "Negation",
-                "Family",
-                "Temporality",
-                "Certainty",
-                "Action",
-                "Allergie",
-                "RefTemp",
-                "AttDate",
-            ],
-        )
-        print(
-            f"NER Prediction is saved in BRAT format in the following folder: {output_folder}"
-        )
+            print(
+                f"NER Prediction is saved in BRAT format in the following folder: {output_folder}"
+            )
+        except Exception as e:
+            print(f"NER SKIPPED for {current_input_folder}, error: {e}")
     tac = time.time()
     print(f"Processed {total_docs} docs in {tac - tic} secondes")
 

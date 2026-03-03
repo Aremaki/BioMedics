@@ -85,70 +85,75 @@ def coder_inference_cli(
         output_dir = base_output_dir / relative_dir
         measurement_pickle = output_dir / "pred_with_measurement.pkl"
 
-        if measurement_pickle.is_file():
-            df = pd.read_pickle(measurement_pickle)
-            if column_name_to_normalize not in df.columns:
-                if "terms_linked_to_measurement" in df.columns:
-                    df = df.explode("terms_linked_to_measurement")
-                    df = df.rename(
-                        columns={
-                            "terms_linked_to_measurement": column_name_to_normalize
-                        }
-                    )
-                else:
-                    df[column_name_to_normalize] = df.term_bio
-        else:
-            doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))
-            ents_list = []
-            for doc in doc_list:
-                if label_to_normalize in doc.spans.keys():
-                    for ent in doc.spans[label_to_normalize]:
-                        ent_data = [
-                            ent.text,
-                            doc._.note_id + ".ann",
-                            [ent.start_char, ent.end_char],
-                            ent.text.lower().strip(),
-                        ]
-                        for qualifier in qualifiers:
-                            if not Span.has_extension(qualifier):
-                                Span.set_extension(qualifier, default=None)
-                            ent_data.append(getattr(ent._, qualifier))
-                        ents_list.append(ent_data)
-            df_columns = [
-                "term",
-                "source",
-                "span_converted",
-                column_name_to_normalize,
-            ] + qualifiers
-            df = pd.DataFrame(ents_list, columns=df_columns)
-        df = df[~df[column_name_to_normalize].isna()]
-        df = get_embedding_similarity(
-            df=df,
-            model_path=model_path,
-            cased=cased,
-            stopwords=stopwords,
-            input_dirs=[brat_dir],
-            umls_path=umls_path,
-            labels_column_name=labels_column_name,
-            synonyms_column_name=synonyms_column_name,
-            column_name_to_normalize=column_name_to_normalize,
-            model_device=model_device,
-            summary_method=summary_method,
-            batch_size=batch_size,
-            tqdm_bar=tqdm_bar,
-            save_umls_embeddings_dir=save_umls_embeddings_dir,
-            save_umls_des_dir=save_umls_des_dir,
-            save_umls_labels_dir=save_umls_labels_dir,
-            save_data_embeddings_dir=save_data_embeddings_dir,
-            normalize=normalize,
-            remove_stopwords_terms=remove_stopwords_terms,
-            remove_special_characters_terms=remove_special_characters_terms,
-            remove_stopwords_umls=remove_stopwords_umls,
-            remove_special_characters_umls=remove_special_characters_umls,
-        )
-        output_dir.mkdir(parents=True, exist_ok=True)
-        if df is not None:
-            df.to_pickle(output_dir / "pred_bio_norm.pkl")
+        try:
+            if measurement_pickle.is_file():
+                print(f"Found measurement pickle for {brat_dir}, loading it.")
+                df = pd.read_pickle(measurement_pickle)
+                if column_name_to_normalize not in df.columns:
+                    if "terms_linked_to_measurement" in df.columns:
+                        df = df.explode("terms_linked_to_measurement")
+                        df = df.rename(
+                            columns={
+                                "terms_linked_to_measurement": column_name_to_normalize
+                            }
+                        )
+                    else:
+                        df[column_name_to_normalize] = df.term_bio
+            else:
+                print(f"No measurement pickle found for {brat_dir}, processing BRAT files.")
+                doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))
+                ents_list = []
+                for doc in doc_list:
+                    if label_to_normalize in doc.spans.keys():
+                        for ent in doc.spans[label_to_normalize]:
+                            ent_data = [
+                                ent.text,
+                                doc._.note_id + ".ann",
+                                [ent.start_char, ent.end_char],
+                                ent.text.lower().strip(),
+                            ]
+                            for qualifier in qualifiers:
+                                if not Span.has_extension(qualifier):
+                                    Span.set_extension(qualifier, default=None)
+                                ent_data.append(getattr(ent._, qualifier))
+                            ents_list.append(ent_data)
+                df_columns = [
+                    "term",
+                    "source",
+                    "span_converted",
+                    column_name_to_normalize,
+                ] + qualifiers
+                df = pd.DataFrame(ents_list, columns=df_columns)
+            df = df[~df[column_name_to_normalize].isna()]
+            df = get_embedding_similarity(
+                df=df,
+                model_path=model_path,
+                cased=cased,
+                stopwords=stopwords,
+                input_dirs=[brat_dir],
+                umls_path=umls_path,
+                labels_column_name=labels_column_name,
+                synonyms_column_name=synonyms_column_name,
+                column_name_to_normalize=column_name_to_normalize,
+                model_device=model_device,
+                summary_method=summary_method,
+                batch_size=batch_size,
+                tqdm_bar=tqdm_bar,
+                save_umls_embeddings_dir=save_umls_embeddings_dir,
+                save_umls_des_dir=save_umls_des_dir,
+                save_umls_labels_dir=save_umls_labels_dir,
+                save_data_embeddings_dir=save_data_embeddings_dir,
+                normalize=normalize,
+                remove_stopwords_terms=remove_stopwords_terms,
+                remove_special_characters_terms=remove_special_characters_terms,
+                remove_stopwords_umls=remove_stopwords_umls,
+                remove_special_characters_umls=remove_special_characters_umls,
+            )
+            output_dir.mkdir(parents=True, exist_ok=True)
+            if df is not None:
+                df.to_pickle(output_dir / "pred_bio_norm.pkl")
+        except Exception as e:
+            print(f"Bio Norm SKIPPED for {brat_dir}, error: {e}")
 
 
 if __name__ == "__main__":
