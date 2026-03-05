@@ -27,13 +27,12 @@ def discover_brat_dirs(base_dir: Path) -> List[Path]:
         raise ValueError(f"No BRAT directory found in {base_dir}")
     return sorted(discovered)
 
-def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
+def extract_pandas(brat_dirs, OUT_DF=None, labels=None):
 
     ENTITY_REGEX = re.compile("^(.\\d+)\t([^ ]+) ([^\t]+)\t(.*)$")
 
     data = []
     patients = []
-    brat_dirs = discover_brat_dirs(Path(IN_BRAT_DIR))
     brat_dirs_with_ann_files = [
         (
             brat_dir,

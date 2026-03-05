@@ -9,6 +9,7 @@ import edsnlp
 import numpy as np
 import pandas as pd
 from confit import Cli
+from loguru import logger
 from spacy.tokens import Span
 
 from biomedics.ner.brat import BratConnector
@@ -16,23 +17,7 @@ from biomedics.utils.extract_pandas_from_brat import discover_brat_dirs
 
 app = Cli(pretty_exceptions_show_locals=False)
 
-
-@app.command(name="group_brat")
-def group_brat(
-    *,
-    input_folder: Path,
-    conf_path: Path,
-    output_folder: Path,
-):
-    np.random.seed(42)
-
-    input_folder = Path(input_folder)
-    if not input_folder.is_dir():
-        raise ValueError(
-            f"Input folder does not exist or is not a directory: {input_folder}"
-        )
-
-    norm_dir = input_folder.parent / "pred_NORM"
+def process_norm_dir(norm_dir):
     drug_norm_path = Path(norm_dir) / "pred_med_norm.pkl"
     bio_norm_path = Path(norm_dir) / "pred_bio_norm.pkl"
     classify_diso_path = Path(norm_dir) / "pred_with_classified_diso.pkl"
@@ -124,10 +109,9 @@ def group_brat(
         res_df = pd.concat(res_dfs)
     else:
         res_df = None
+    return res_df
 
-
-    base_ner_dir = input_folder.parent / "pred_NER"
-    ner_dirs = discover_brat_dirs(base_ner_dir)
+def process_ner_dir(ner_dirs, base_ner_dir, res_df, conf_path, output_folder):
     for ner_dir in ner_dirs:
         # Load NER data
         doc_list = BratConnector(Path(ner_dir)).brat2docs(edsnlp.blank("eds"))  # type: ignore
@@ -246,6 +230,73 @@ def group_brat(
                     "RefTemp",
                     "AttDate",
                 ],
+            )
+
+@app.command(name="group_brat")
+def group_brat(
+    *,
+    input_folder: Path,
+    conf_path: Path,
+    output_folder: Path,
+    batch_size: int,
+):
+    np.random.seed(42)
+
+    input_folder = Path(input_folder)
+    if not input_folder.is_dir():
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {input_folder}"
+        )
+
+    base_ner_dir = input_folder.parent / "pred_NER"
+    norm_folder = input_folder.parent / "pred_NORM"
+    # Count the number of .ann files in the brat_dir
+    brat_dirs = discover_brat_dirs(base_ner_dir)
+    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
+    # Split into batch
+    if total_ann_files > batch_size:
+        logger.info(f"Splitting {total_ann_files} .ann files into batches of {batch_size}")
+        batch_brats = []
+        batch_num = 1
+        ann_counts = 0
+        for brat_dir in brat_dirs:
+            ann_counts += len(list((base_ner_dir / brat_dir).glob("*.ann")))
+            if ann_counts > batch_size:
+                logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
+                norm_dir = norm_folder / f"batch_{batch_num}"
+                norm_dir.mkdir(parents=True, exist_ok=True)
+                try:
+                    res_df = process_norm_dir(norm_dir)
+                    process_ner_dir(batch_brats, base_ner_dir, res_df, conf_path, output_folder)
+                except Exception as e:
+                    logger.exception(
+                        f"Processing failed for batch {batch_num} of {len(batch_brats)} brats, error: {e}"
+                    )
+                batch_brats = []
+                ann_counts = 0
+                batch_num += 1
+            batch_brats.append(brat_dir)
+        if batch_brats:
+            logger.info(f"Processing final batch {batch_num} of {ann_counts} .ann files")
+            norm_dir = norm_folder / f"batch_{batch_num}"
+            norm_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                res_df = process_norm_dir(norm_dir)
+                process_ner_dir(batch_brats, base_ner_dir, res_df, conf_path, output_folder)
+            except Exception as e:
+                logger.exception(
+                    f"Processing failed for final batch {batch_num} of {len(batch_brats)} brats, error: {e}"
+                )
+    else:
+        logger.info(f"Processing all {total_ann_files} .ann files in one batch")
+        norm_folder.mkdir(parents=True, exist_ok=True)
+        try:
+            res_df = process_norm_dir(norm_folder)
+            process_ner_dir(brat_dirs, base_ner_dir, res_df, conf_path, output_folder)
+        except Exception as e:
+            logger.exception(
+                f"Processing failed for all {total_ann_files} .ann files, error: {e}"
             )
 
 if __name__ == "__main__":

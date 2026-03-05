@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import duckdb
 import edsnlp
@@ -9,7 +8,6 @@ from unidecode import unidecode
 
 from biomedics.ner.brat import BratConnector
 from biomedics.normalization.fuzzy.exception import exception_list
-from biomedics.utils.extract_pandas_from_brat import discover_brat_dirs
 
 
 class FuzzyNormaliser:
@@ -30,8 +28,10 @@ class FuzzyNormaliser:
             self.df = pd.read_pickle(df_path)
             if "term_to_norm" not in self.df.columns:
                 self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
-        else:
+        elif isinstance(df_path, list):
             self.df = self.gold_generation(df_path, label_to_normalize, qualifiers)
+        else:
+            raise ValueError(f"Unsupported file format for df_path: {df_path}")
         self.unashable_cols = []
         for col in self.df.columns:
             if (
@@ -83,8 +83,7 @@ class FuzzyNormaliser:
     def get_dict(self):
         return self.drug_dict
 
-    def gold_generation(self, df_path, label_to_normalize, qualifiers):
-        brat_dirs = discover_brat_dirs(Path(df_path))
+    def gold_generation(self, brat_dirs, label_to_normalize, qualifiers):
         ents_list = []
         for brat_dir in brat_dirs:
             doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore

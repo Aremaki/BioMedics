@@ -151,8 +151,8 @@ def _convert_brat_spans(span):
     return [span_start, span_end]
 
 
-def convert_brat_to_spark(spark, brat_dir, labels):
-    df = extract_pandas(IN_BRAT_DIR=brat_dir)
+def convert_brat_to_spark(spark, brat_dirs, labels):
+    df = extract_pandas(brat_dirs=brat_dirs)
     df = df.loc[df["label"].isin(labels)]
     df["span_converted"] = df["span"].apply(_convert_brat_spans)
     df["span_start"] = df["span_converted"].str.get(0)
@@ -170,7 +170,7 @@ def convert_brat_to_spark(spark, brat_dir, labels):
         ]
     ]
     if df.empty:
-        logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED for {brat_dir}. ")
+        logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED for {brat_dirs}. ")
         return None
     else:
         return spark.createDataFrame(df)
@@ -520,7 +520,7 @@ def extract_clean_subsequent_lex_var(df):
     return df_subs_lex_var_after_removal_fluid_source
 
 
-def bio_post_processing(spark, script_config, brat_dir, output_dir):
+def bio_post_processing(spark, script_config, brat_dirs, output_dir):
     logger.info("-------------Load entities-------------")
 
     start_t1 = time.time()
@@ -529,7 +529,7 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     labels_to_remove = script_config["labels_to_remove"]
     all_labels = [label_key] + labels_to_remove
 
-    df_ents_sparks = convert_brat_to_spark(spark, brat_dir, all_labels)
+    df_ents_sparks = convert_brat_to_spark(spark, brat_dirs, all_labels)
     if df_ents_sparks is None:
         return None
     df_ents_bio_comp = df_ents_sparks.filter(F.col("label") == label_key)  # type: ignore

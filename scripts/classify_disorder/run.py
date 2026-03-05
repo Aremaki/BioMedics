@@ -9,6 +9,7 @@ import edsnlp
 import pandas as pd
 import torch
 from confit import Cli
+from loguru import logger
 from spacy.tokens import Span
 from torch.utils.data import DataLoader
 from tqdm import tqdm  # Import tqdm for progress bar
@@ -25,45 +26,19 @@ from biomedics.utils.extract_pandas_from_brat import discover_brat_dirs
 
 app = Cli(pretty_exceptions_show_locals=False)
 
-
-@app.command(name="classify_diso")
-def classify_diso_cli(
-    *,
-    classif_model_path: str,
-    labels_path: str,
-    embedding_model_path: str,
-    input_folder: Path,
+def run_classify_diso(
+    brat_dirs: list,
+    model: CamembertForSequenceClassification,
+    tokenizer: CamembertTokenizer,
+    device: torch.device,
+    label_names: str,
+    output_dir: Path,
     stopwords: List[str],
     qualifiers: List[str],
+    embedding_model_path: str,
 ):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
 
-    # Load model classifier
-    with open(labels_path, "r") as f_out:
-        label_names = f_out.readline().strip().split(",")
-    print(f"Label names loaded from {labels_path}")
-
-    num_labels = len(label_names)
-
-    # load the model
-    print(f"Load model from {classif_model_path}")
-    model = CamembertForSequenceClassification.from_pretrained(
-        classif_model_path, num_labels=num_labels
-    ).to(device)  # type: ignore
-    tokenizer = CamembertTokenizer.from_pretrained(classif_model_path)
-
-    input_folder = Path(input_folder)
-    if not input_folder.is_dir():
-        raise ValueError(
-            f"Input folder does not exist or is not a directory: {input_folder}"
-        )
-
-    base_brat_dir = input_folder.parent / "pred_NER"
-    output_dir = input_folder.parent / "pred_NORM"
-    brat_dirs = discover_brat_dirs(base_brat_dir)
-
-    # Load Data
+  # Load Data
     ents_list = []
     for brat_dir in brat_dirs:
         docs = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
@@ -169,6 +144,117 @@ def classify_diso_cli(
     result_embedding["labels"] = all_terms["labels"]
     result_embedding["scores"] = all_terms["scores"]
     result_embedding.to_pickle(output_dir / "pred_diso_embedding.pkl")
+
+@app.command(name="classify_diso")
+def classify_diso_cli(
+    *,
+    classif_model_path: str,
+    labels_path: str,
+    embedding_model_path: str,
+    input_folder: Path,
+    stopwords: List[str],
+    qualifiers: List[str],
+    batch_size: int,
+):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+
+    # Load model classifier
+    with open(labels_path, "r") as f_out:
+        label_names = f_out.readline().strip().split(",")
+    print(f"Label names loaded from {labels_path}")
+
+    num_labels = len(label_names)
+
+    # load the model
+    print(f"Load model from {classif_model_path}")
+    model = CamembertForSequenceClassification.from_pretrained(
+        classif_model_path, num_labels=num_labels
+    ).to(device)  # type: ignore
+    tokenizer = CamembertTokenizer.from_pretrained(classif_model_path)
+
+    input_folder = Path(input_folder)
+    if not input_folder.is_dir():
+        raise ValueError(
+            f"Input folder does not exist or is not a directory: {input_folder}"
+        )
+
+    base_ner_dir = input_folder.parent / "pred_NER"
+    output_dir = input_folder.parent / "pred_NORM"
+    brat_dirs = discover_brat_dirs(base_ner_dir)
+    # Count the number of .ann files in the brat_dir
+    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
+    # Split into batch
+    if total_ann_files > batch_size:
+        logger.info(f"Splitting {total_ann_files} .ann files into batches of {batch_size}")
+        batch_brats = []
+        batch_num = 1
+        ann_counts = 0
+        for brat_dir in brat_dirs:
+            ann_counts += len(list((brat_dir).glob("*.ann")))
+            if ann_counts > batch_size:
+                logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
+                output_dir = output_dir / f"batch_{batch_num}"
+                output_dir.mkdir(parents=True, exist_ok=True)
+                try:
+                    run_classify_diso(
+                        brat_dirs=batch_brats,
+                        model=model,
+                        tokenizer=tokenizer,
+                        device=device,
+                        label_names=label_names,
+                        output_dir=output_dir,
+                        stopwords=stopwords,
+                        qualifiers=qualifiers,
+                        embedding_model_path=embedding_model_path,
+                    )
+                except Exception as e:
+                    logger.exception(
+                        f"Classify DISO failed for batch {batch_num} of {len(batch_brats)} brats, error: {e}"
+                    )
+                batch_brats = []
+                ann_counts = 0
+                batch_num += 1
+            batch_brats.append(brat_dir)
+        if batch_brats:
+            logger.info(f"Processing final batch {batch_num} of {ann_counts} .ann files")
+            output_dir = output_dir / f"batch_{batch_num}"
+            output_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                run_classify_diso(
+                        brat_dirs=batch_brats,
+                        model=model,
+                        tokenizer=tokenizer,
+                        device=device,
+                        label_names=label_names,
+                        output_dir=output_dir,
+                        stopwords=stopwords,
+                        qualifiers=qualifiers,
+                        embedding_model_path=embedding_model_path,
+                    )
+            except Exception as e:
+                logger.exception(
+                    f"Classify DISO failed for final batch {batch_num} of {len(batch_brats)} brats, error: {e}"
+                )
+    else:
+        logger.info(f"Processing all {total_ann_files} .ann files in one batch.")
+        try:
+            run_classify_diso(
+                brat_dirs=brat_dirs,
+                model=model,
+                tokenizer=tokenizer,
+                device=device,
+                label_names=label_names,
+                output_dir=output_dir,
+                stopwords=stopwords,
+                qualifiers=qualifiers,
+                embedding_model_path=embedding_model_path,
+            )
+        except Exception as e:
+            logger.exception(
+                f"Classify DISO failed for all {total_ann_files} .ann files, error: {e}"
+            )
 
 if __name__ == "__main__":
     app()
