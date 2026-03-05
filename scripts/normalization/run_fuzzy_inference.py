@@ -107,7 +107,7 @@ def normalize_med_cli(
             output_dir.mkdir(parents=True, exist_ok=True)
             df.to_pickle(output_dir / "pred_med_norm.pkl")
         except Exception as e:
-            logger.exception(f"Drug Norm SKIPPED for {brat_dir}, error: {e}")
+            logger.exception(f"Drug Norm SKIPPED, error: {e}")
 
 
 if __name__ == "__main__":

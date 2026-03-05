@@ -170,7 +170,7 @@ def convert_brat_to_spark(spark, brat_dirs, labels):
         ]
     ]
     if df.empty:
-        logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED for {brat_dirs}. ")
+        logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED.")
         return None
     else:
         return spark.createDataFrame(df)
