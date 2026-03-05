@@ -183,7 +183,7 @@ def classify_diso_cli(
     output_dir = input_folder.parent / "pred_NORM"
     brat_dirs = discover_brat_dirs(base_ner_dir)
     # Count the number of .ann files in the brat_dir
-    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    total_ann_files = sum(len(list(brat_dir.glob("*.ann"))) for brat_dir in brat_dirs)
     logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
     # Split into batch
     if total_ann_files > batch_size:
@@ -195,8 +195,8 @@ def classify_diso_cli(
             ann_counts += len(list((brat_dir).glob("*.ann")))
             if ann_counts > batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-                output_dir = output_dir / f"batch_{batch_num}"
-                output_dir.mkdir(parents=True, exist_ok=True)
+                batch_output_dir = output_dir / f"batch_{batch_num}"
+                batch_output_dir.mkdir(parents=True, exist_ok=True)
                 try:
                     run_classify_diso(
                         brat_dirs=batch_brats,
@@ -204,7 +204,7 @@ def classify_diso_cli(
                         tokenizer=tokenizer,
                         device=device,
                         label_names=label_names,
-                        output_dir=output_dir,
+                        output_dir=batch_output_dir,
                         stopwords=stopwords,
                         qualifiers=qualifiers,
                         embedding_model_path=embedding_model_path,
@@ -219,8 +219,8 @@ def classify_diso_cli(
             batch_brats.append(brat_dir)
         if batch_brats:
             logger.info(f"Processing final batch {batch_num} of {ann_counts} .ann files")
-            output_dir = output_dir / f"batch_{batch_num}"
-            output_dir.mkdir(parents=True, exist_ok=True)
+            batch_output_dir = output_dir / f"batch_{batch_num}"
+            batch_output_dir.mkdir(parents=True, exist_ok=True)
             try:
                 run_classify_diso(
                         brat_dirs=batch_brats,
@@ -228,7 +228,7 @@ def classify_diso_cli(
                         tokenizer=tokenizer,
                         device=device,
                         label_names=label_names,
-                        output_dir=output_dir,
+                        output_dir=batch_output_dir,
                         stopwords=stopwords,
                         qualifiers=qualifiers,
                         embedding_model_path=embedding_model_path,

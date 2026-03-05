@@ -40,7 +40,7 @@ def normalize_med_cli(
 
     # Count the number of .ann files in the brat_dir
     brat_dirs = discover_brat_dirs(base_ner_dir)
-    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    total_ann_files = sum(len(list(brat_dir.glob("*.ann"))) for brat_dir in brat_dirs)
     logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
     # Split into batch
     if total_ann_files > batch_size:
@@ -52,8 +52,8 @@ def normalize_med_cli(
             ann_counts += len(list((brat_dir).glob("*.ann")))
             if ann_counts > batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-                output_dir = output_dir / f"batch_{batch_num}"
-                output_dir.mkdir(parents=True, exist_ok=True)
+                batch_output_dir = output_dir / f"batch_{batch_num}"
+                batch_output_dir.mkdir(parents=True, exist_ok=True)
                 try:
                     normaliser = FuzzyNormaliser(
                         batch_brats,
@@ -64,6 +64,7 @@ def normalize_med_cli(
                         atc_len=7,
                     )
                     df = normaliser.normalize(threshold=threshold)  # type: ignore
+                    df.to_pickle(batch_output_dir / "pred_med_norm.pkl")
                 except Exception as e:
                     logger.exception(
                         f"Fuzzy Inference failed for batch {batch_num} of {len(batch_brats)} brats, error: {e}"
@@ -74,8 +75,8 @@ def normalize_med_cli(
             batch_brats.append(brat_dir)
         if batch_brats:
             logger.info(f"Processing final batch {batch_num} of {ann_counts} .ann files")
-            output_dir = output_dir / f"batch_{batch_num}"
-            output_dir.mkdir(parents=True, exist_ok=True)
+            batch_output_dir = output_dir / f"batch_{batch_num}"
+            batch_output_dir.mkdir(parents=True, exist_ok=True)
             try:
                 normaliser = FuzzyNormaliser(
                     batch_brats,
@@ -86,6 +87,7 @@ def normalize_med_cli(
                     atc_len=7,
                 )
                 df = normaliser.normalize(threshold=threshold)  # type: ignore
+                df.to_pickle(batch_output_dir / "pred_med_norm.pkl")
             except Exception as e:
                 logger.exception(
                     f"Fuzzy Inference failed for final batch {batch_num} of {len(batch_brats)} brats, error: {e}"

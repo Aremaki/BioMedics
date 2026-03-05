@@ -252,7 +252,7 @@ def group_brat(
     norm_folder = input_folder.parent / "pred_NORM"
     # Count the number of .ann files in the brat_dir
     brat_dirs = discover_brat_dirs(base_ner_dir)
-    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    total_ann_files = sum(len(list(brat_dir.glob("*.ann"))) for brat_dir in brat_dirs)
     logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
     # Split into batch
     if total_ann_files > batch_size:

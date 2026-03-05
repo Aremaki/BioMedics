@@ -154,7 +154,7 @@ def coder_inference_cli(
     base_ner_dir = input_folder.parent / "pred_NER"
     # Count the number of .ann files in the brat_dir
     brat_dirs = discover_brat_dirs(base_ner_dir)
-    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    total_ann_files = sum(len(list(brat_dir.glob("*.ann"))) for brat_dir in brat_dirs)
     logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
     # Split into batch
     if total_ann_files > file_batch_size:
@@ -166,10 +166,10 @@ def coder_inference_cli(
             ann_counts += len(list((brat_dir).glob("*.ann")))
             if ann_counts > file_batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-                output_dir = output_dir / f"batch_{batch_num}"
-                output_dir.mkdir(parents=True, exist_ok=True)
+                batch_output_dir = output_dir / f"batch_{batch_num}"
+                batch_output_dir.mkdir(parents=True, exist_ok=True)
                 run_coder_inference(
-                    output_dir=output_dir,
+                    output_dir=batch_output_dir,
                     brat_dirs=batch_brats,
                     model_path=model_path,
                     umls_path=umls_path,
@@ -200,10 +200,10 @@ def coder_inference_cli(
             batch_brats.append(brat_dir)
         if batch_brats:
             logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-            output_dir = output_dir / f"batch_{batch_num}"
-            output_dir.mkdir(parents=True, exist_ok=True)
+            batch_output_dir = output_dir / f"batch_{batch_num}"
+            batch_output_dir.mkdir(parents=True, exist_ok=True)
             run_coder_inference(
-                output_dir=output_dir,
+                output_dir=batch_output_dir,
                 brat_dirs=batch_brats,
                 model_path=model_path,
                 umls_path=umls_path,

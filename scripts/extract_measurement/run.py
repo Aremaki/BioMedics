@@ -30,7 +30,7 @@ def run(spark, sql, config):
 
     # Count the number of .ann files in the brat_dir
     brat_dirs = discover_brat_dirs(base_ner_dir)
-    total_ann_files = sum(len(list((base_ner_dir / d).glob("*.ann")) for d in brat_dirs))
+    total_ann_files = sum(len(list(brat_dir.glob("*.ann"))) for brat_dir in brat_dirs)
     logger.info(f"Found {total_ann_files} .ann files in {base_ner_dir}")
 
     # Split into batch
@@ -43,10 +43,10 @@ def run(spark, sql, config):
             ann_counts += len(list((brat_dir).glob("*.ann")))
             if ann_counts > batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-                output_dir = output_dir / f"batch_{batch_num}"
-                output_dir.mkdir(parents=True, exist_ok=True)
+                batch_output_dir = output_dir / f"batch_{batch_num}"
+                batch_output_dir.mkdir(parents=True, exist_ok=True)
                 try:
-                    bio_post_processing(spark, script_config, batch_brats, output_dir)
+                    bio_post_processing(spark, script_config, batch_brats, batch_output_dir)
                 except Exception as e:
                     logger.exception(
                         f"Extract Measurement failed for batch {batch_num} of {len(batch_brats)} brats, error: {e}"
@@ -57,10 +57,10 @@ def run(spark, sql, config):
             batch_brats.append(brat_dir)
         if batch_brats:
             logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
-            output_dir = output_dir / f"batch_{batch_num}"
-            output_dir.mkdir(parents=True, exist_ok=True)
+            batch_output_dir = output_dir / f"batch_{batch_num}"
+            batch_output_dir.mkdir(parents=True, exist_ok=True)
             try:
-                bio_post_processing(spark, script_config, batch_brats, output_dir)
+                bio_post_processing(spark, script_config, batch_brats, batch_output_dir)
             except Exception as e:
                 logger.exception(
                     f"Extract Measurement failed for final batch {batch_num} of {len(batch_brats)} brats, error: {e}"
