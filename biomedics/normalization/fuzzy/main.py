@@ -13,28 +13,14 @@ from biomedics.normalization.fuzzy.exception import exception_list
 class FuzzyNormaliser:
     def __init__(
         self,
-        df_path,
+        brat_dirs,
         drug_dict,
         label_to_normalize,
         qualifiers,
         method="lev",
         atc_len=7,
     ):
-        if isinstance(df_path, list):
-            self.df = self.gold_generation(df_path, label_to_normalize, qualifiers)
-        elif isinstance(df_path, str):
-            if df_path.endswith("json"):
-                self.df = pd.read_json(df_path)
-                if "term_to_norm" not in self.df.columns:
-                    self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
-            elif df_path.endswith("pkl"):
-                self.df = pd.read_pickle(df_path)
-                if "term_to_norm" not in self.df.columns:
-                    self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
-            else:
-                raise ValueError(f"Unsupported file format for df_path: {df_path}")
-        else:
-            raise ValueError(f"Unsupported file format for df_path: {df_path}")
+        self.df = self.gold_generation(brat_dirs, label_to_normalize, qualifiers)
         self.unashable_cols = []
         for col in self.df.columns:
             if (

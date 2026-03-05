@@ -96,7 +96,7 @@ def normalize_med_cli(
     else:
         try:
             normaliser = FuzzyNormaliser(
-                str(base_ner_dir),
+                brat_dirs,
                 drug_dict,
                 label_to_normalize,
                 qualifiers,
