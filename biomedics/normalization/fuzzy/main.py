@@ -125,9 +125,15 @@ class FuzzyNormaliser:
         if self.method == "lev":
             df_1 = self.df.copy()
             df_2 = self.drug_dict.copy()  # noqa: F841
+
+            print("Running Levenshtein matching...")
+
             merged_df = duckdb.query(
                 f"""select *, levenshtein(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score < {threshold}"""
             ).to_df()
+
+            print("Computing similarity normalization...")
+
             merged_df["term_to_norm_len"] = merged_df.term_to_norm.str.len()
             merged_df["norm_term_len"] = merged_df.norm_term.str.len()
             merged_df["max_len"] = merged_df[["norm_term_len", "term_to_norm_len"]].max(
@@ -149,9 +155,15 @@ class FuzzyNormaliser:
         if self.method == "jaro_winkler":
             df_1 = self.df.copy()
             df_2 = self.drug_dict.copy()  # noqa: F841
+
+            print("Running Jaro-Winkler matching...")
+
             merged_df = duckdb.query(
                 f"""select *, jaro_winkler_similarity(df_1.term_to_norm, df_2.norm_term) score from df_1, df_2 where score > {threshold}"""
             ).to_df()
+
+            print("Computing similarity normalization...")
+
             idx = (
                 merged_df.groupby(["source", "span_converted"])["score"].transform(max)
                 == merged_df["score"]
