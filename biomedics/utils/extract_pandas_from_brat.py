@@ -34,19 +34,30 @@ def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None):
     data = []
     patients = []
     brat_dirs = discover_brat_dirs(Path(IN_BRAT_DIR))
-    for brat_dir in brat_dirs:
-        # extract all ann_files from brat_dir
-        ann_files = [
-            f
-            for f in listdir(brat_dir)
-            if isfile(join(brat_dir, f))
-            if f.endswith(".ann")
-        ]
-        for ann_file in tqdm(
-            ann_files,
-            desc=f"Parsing annotations ({os.path.basename(os.path.normpath(brat_dir))})",
-            unit="file",
-        ):
+    brat_dirs_with_ann_files = [
+        (
+            brat_dir,
+            [
+                f
+                for f in listdir(brat_dir)
+                if isfile(join(brat_dir, f))
+                if f.endswith(".ann")
+            ],
+        )
+        for brat_dir in brat_dirs
+    ]
+    total_ann_files = sum(len(ann_files) for _, ann_files in brat_dirs_with_ann_files)
+
+    brat_dirs_progress = tqdm(
+        brat_dirs_with_ann_files,
+        desc=f"Parsing BRAT directories (ann_files={total_ann_files})",
+        unit="dir",
+    )
+    for brat_dir, ann_files in brat_dirs_progress:
+        brat_dirs_progress.set_postfix_str(
+            f"{os.path.basename(os.path.normpath(brat_dir))}: {len(ann_files)} ann_files"
+        )
+        for ann_file in ann_files:
             ann_path = join(brat_dir, ann_file)
             txt_path = ann_path[:-4] + ".txt"
 
