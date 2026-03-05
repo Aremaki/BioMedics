@@ -163,8 +163,10 @@ def coder_inference_cli(
         batch_num = 1
         ann_counts = 0
         for brat_dir in brat_dirs:
+            ann_count = len(list((brat_dir).glob("*.ann")))
+            ann_counts += ann_count
             if ann_counts > file_batch_size:
-                logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
+                logger.info(f"Processing batch {batch_num} of {ann_counts - ann_count} .ann files")
                 batch_output_dir = output_dir / f"batch_{batch_num}"
                 batch_output_dir.mkdir(parents=True, exist_ok=True)
                 run_coder_inference(
@@ -194,10 +196,9 @@ def coder_inference_cli(
                     remove_special_characters_umls=remove_special_characters_umls,
                 )
                 batch_brats = []
-                ann_counts = 0
+                ann_counts = ann_count
                 batch_num += 1
             batch_brats.append(brat_dir)
-            ann_counts += len(list((brat_dir).glob("*.ann")))
         if batch_brats:
             logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
             batch_output_dir = output_dir / f"batch_{batch_num}"
