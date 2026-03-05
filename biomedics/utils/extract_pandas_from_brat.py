@@ -13,9 +13,29 @@
 import re
 from os import listdir
 from os.path import basename, isdir, isfile, join
+from pathlib import Path
+from typing import List
 
 import pandas as pd
 
+
+def discover_brat_dirs(base_dir: Path) -> List[Path]:
+    if not base_dir.is_dir():
+        raise ValueError(f"No BRAT directory found: {base_dir}")
+
+    discovered: List[Path] = []
+
+    if list(base_dir.glob("*.txt")):
+        discovered.append(base_dir)
+        return discovered
+
+    for candidate in base_dir.iterdir():
+        if candidate.is_dir() and list(candidate.glob("*.txt")):
+            discovered.append(candidate)
+
+    if not discovered:
+        raise ValueError(f"No BRAT directory found in {base_dir}")
+    return sorted(discovered)
 
 def extract_pandas(IN_BRAT_DIR, OUT_DF=None, labels=None, files_list=None):
     assert isdir(IN_BRAT_DIR)

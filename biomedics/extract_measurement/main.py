@@ -1,8 +1,10 @@
 import os
 import re
 import time
+from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pyarrow.parquet as pq
 from loguru import logger
 from pyspark.sql import functions as F
@@ -11,7 +13,7 @@ from pyspark.sql.types import StringType
 from biomedics.extract_measurement.bio_lexical_variant import (
     lexical_var_non_digit_values,
 )
-from biomedics.utils.extract_pandas_from_brat import extract_pandas
+from biomedics.utils.extract_pandas_from_brat import discover_brat_dirs, extract_pandas
 
 
 def _clean_lexical_variant(lex_var):
@@ -153,13 +155,36 @@ def _convert_brat_spans(span):
 
 def convert_brat_to_spark(spark, brat_dir, labels):
     # Convert span to list with span_start, span_end. It considers the new lines by adding one character.
-    df = extract_pandas(IN_BRAT_DIR=brat_dir)
+    brat_dirs = discover_brat_dirs(Path(brat_dir))
+    dfs = []
+    for brat_dir in brat_dirs:
+        df_part = extract_pandas(IN_BRAT_DIR=brat_dir)
+        if df_part.empty:
+            continue
+        df_part["folder_name"] = os.path.basename(os.path.normpath(brat_dir))
+        dfs.append(df_part)
+
+    if len(dfs) == 0:
+        logger.warning(f"No BRAT annotations found in {brat_dir}. Bio Norm SKIPPED.")
+        return None
+
+    df = pd.concat(dfs, ignore_index=True)
     df = df.loc[df["label"].isin(labels)]
     df["span_converted"] = df["span"].apply(_convert_brat_spans)
     df["span_start"] = df["span_converted"].str.get(0)
     df["span_end"] = df["span_converted"].str.get(1)
     df["lexical_variant"] = df["term"].copy()
-    df = df[["term", "lexical_variant", "source", "span_start", "span_end", "label"]]
+    df = df[
+        [
+            "term",
+            "lexical_variant",
+            "source",
+            "folder_name",
+            "span_start",
+            "span_end",
+            "label",
+        ]
+    ]
     if df.empty:
         logger.warning(f"No entities with specified labels: {labels}. Bio Norm SKIPPED for {brat_dir}. ")
         return None
@@ -610,6 +635,7 @@ def bio_post_processing(spark, script_config, brat_dir, output_dir):
     )
     df_final = df_biocomp_bio_clean.select(
         "source",
+        "folder_name",
         "span_start",
         "span_start_bio",
         "span_end",

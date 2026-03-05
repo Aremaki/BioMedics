@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 import duckdb
 import edsnlp
 import pandas as pd
@@ -6,6 +9,7 @@ from unidecode import unidecode
 
 from biomedics.ner.brat import BratConnector
 from biomedics.normalization.fuzzy.exception import exception_list
+from biomedics.utils.extract_pandas_from_brat import discover_brat_dirs
 
 
 class FuzzyNormaliser:
@@ -80,25 +84,28 @@ class FuzzyNormaliser:
         return self.drug_dict
 
     def gold_generation(self, df_path, label_to_normalize, qualifiers):
-        doc_list = BratConnector(df_path).brat2docs(edsnlp.blank("eds"))  # type: ignore
+        brat_dirs = discover_brat_dirs(Path(df_path))
         ents_list = []
-        for doc in doc_list:
-            if label_to_normalize in doc.spans.keys():
-                for ent in doc.spans[label_to_normalize]:
-                    if hasattr(ent._, "Tech") and ent._.Tech:
-                        continue
-                    ent_data = [
-                        ent.text,
-                        doc._.note_id + ".ann",
-                        [ent.start_char, ent.end_char],
-                        ent.text.lower().strip(),
-                    ]
-                    for qualifier in qualifiers:
-                        if not Span.has_extension(qualifier):
-                            Span.set_extension(qualifier, default=None)
-                        ent_data.append(getattr(ent._, qualifier))
-                    ents_list.append(ent_data)
-        df_columns = ["term", "source", "span_converted", "term_to_norm"] + qualifiers
+        for brat_dir in brat_dirs:
+            doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
+            for doc in doc_list:
+                if label_to_normalize in doc.spans.keys():
+                    for ent in doc.spans[label_to_normalize]:
+                        if hasattr(ent._, "Tech") and ent._.Tech:
+                            continue
+                        ent_data = [
+                            ent.text,
+                            doc._.note_id + ".ann",
+                            [ent.start_char, ent.end_char],
+                            ent.text.lower().strip(),
+                            os.path.basename(os.path.normpath(brat_dir))
+                        ]
+                        for qualifier in qualifiers:
+                            if not Span.has_extension(qualifier):
+                                Span.set_extension(qualifier, default=None)
+                            ent_data.append(getattr(ent._, qualifier))
+                        ents_list.append(ent_data)
+        df_columns = ["term", "source", "span_converted", "term_to_norm", "folder_name"] + qualifiers
         df = pd.DataFrame(ents_list, columns=df_columns)
         return df
 
