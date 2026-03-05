@@ -29,6 +29,7 @@ def infer(
     input_folder: Path,
     model_path: Path,
     quantize: bool = False,
+    batch_size: int = 80_000,
 ):
     total_docs = 0
     tic = time.time()
@@ -98,6 +99,19 @@ def infer(
     if has_base_txt:
         print(f"Processing base folder: {base_input_folder}")
         subfolders = [base_input_folder]  # Process base folder only, no subfolders
+        # Check if len exceed batch size if so split into subfolders of batch size and move the files into the subfolders
+        if len(base_txt_files) > batch_size:
+            print(f"Splitting {len(base_txt_files)} .txt files into batches of {batch_size}")
+            batch_num = 1
+            subfolders = []  # Reset subfolders to be the newly created batch folders
+            for i in range(0, len(base_txt_files), batch_size):
+                batch_folder = base_input_folder / f"batch_{batch_num}"
+                batch_folder.mkdir(parents=True, exist_ok=True)
+                for txt_file in base_txt_files[i : i + batch_size]:
+                    txt_file.rename(batch_folder / txt_file.name)
+                subfolders.append(batch_folder)
+                print(f"Created batch folder {batch_folder} with {len(list(batch_folder.glob('*.txt')))} .txt files")
+                batch_num += 1
 
     for current_input_folder in subfolders:
         print(f"Processing folder: {current_input_folder}")
