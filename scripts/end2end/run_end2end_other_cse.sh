@@ -117,7 +117,6 @@ kill $TAIL_STDOUT_PID $TAIL_STDERR_PID
 wait $TAIL_STDOUT_PID $TAIL_STDERR_PID 2>/dev/null
 
 echo "Job $JOB_ID finished. Continuing..."
-echo "All Good"
 
 #######################
 ## GROUP ALL IN BRAT
