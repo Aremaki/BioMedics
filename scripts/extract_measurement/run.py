@@ -40,7 +40,6 @@ def run(spark, sql, config):
         batch_num = 1
         ann_counts = 0
         for brat_dir in brat_dirs:
-            ann_counts += len(list((brat_dir).glob("*.ann")))
             if ann_counts > batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
                 batch_output_dir = output_dir / f"batch_{batch_num}"
@@ -55,6 +54,7 @@ def run(spark, sql, config):
                 ann_counts = 0
                 batch_num += 1
             batch_brats.append(brat_dir)
+            ann_counts += len(list((brat_dir).glob("*.ann")))
         if batch_brats:
             logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
             batch_output_dir = output_dir / f"batch_{batch_num}"

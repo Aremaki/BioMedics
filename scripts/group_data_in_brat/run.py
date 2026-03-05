@@ -261,7 +261,6 @@ def group_brat(
         batch_num = 1
         ann_counts = 0
         for brat_dir in brat_dirs:
-            ann_counts += len(list((base_ner_dir / brat_dir).glob("*.ann")))
             if ann_counts > batch_size:
                 logger.info(f"Processing batch {batch_num} of {ann_counts} .ann files")
                 norm_dir = norm_folder / f"batch_{batch_num}"
@@ -277,6 +276,7 @@ def group_brat(
                 ann_counts = 0
                 batch_num += 1
             batch_brats.append(brat_dir)
+            ann_counts += len(list((base_ner_dir / brat_dir).glob("*.ann")))
         if batch_brats:
             logger.info(f"Processing final batch {batch_num} of {ann_counts} .ann files")
             norm_dir = norm_folder / f"batch_{batch_num}"

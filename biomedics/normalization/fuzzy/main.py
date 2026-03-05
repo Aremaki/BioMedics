@@ -20,16 +20,19 @@ class FuzzyNormaliser:
         method="lev",
         atc_len=7,
     ):
-        if df_path.endswith("json"):
-            self.df = pd.read_json(df_path)
-            if "term_to_norm" not in self.df.columns:
-                self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
-        elif df_path.endswith("pkl"):
-            self.df = pd.read_pickle(df_path)
-            if "term_to_norm" not in self.df.columns:
-                self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
-        elif isinstance(df_path, list):
+        if isinstance(df_path, list):
             self.df = self.gold_generation(df_path, label_to_normalize, qualifiers)
+        elif isinstance(df_path, str):
+            if df_path.endswith("json"):
+                self.df = pd.read_json(df_path)
+                if "term_to_norm" not in self.df.columns:
+                    self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
+            elif df_path.endswith("pkl"):
+                self.df = pd.read_pickle(df_path)
+                if "term_to_norm" not in self.df.columns:
+                    self.df["term_to_norm"] = self.df.term.str.lower().str.strip()
+            else:
+                raise ValueError(f"Unsupported file format for df_path: {df_path}")
         else:
             raise ValueError(f"Unsupported file format for df_path: {df_path}")
         self.unashable_cols = []
