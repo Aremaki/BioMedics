@@ -23,6 +23,7 @@ def process_norm_dir(norm_dir):
     classify_diso_path = Path(norm_dir) / "pred_with_classified_diso.pkl"
     res_dfs = []
     if os.path.exists(classify_diso_path):
+        print(f"Found disorder classes at {classify_diso_path}, processing...")
         res_diso_df = pd.read_pickle(
             Path(norm_dir) / "pred_with_classified_diso.pkl"
         )
@@ -44,6 +45,7 @@ def process_norm_dir(norm_dir):
         res_dfs.append(res_diso_df)
 
     if os.path.exists(drug_norm_path):
+        print(f"Found drug normalization results at {drug_norm_path}, processing...")
         res_drug_df = pd.read_pickle(drug_norm_path)
         res_drug_df["annotation"] = (
             "Match synonyme: "
@@ -63,6 +65,7 @@ def process_norm_dir(norm_dir):
         ]
         res_dfs.append(res_drug_df)
     if os.path.exists(bio_norm_path):
+        print(f"Found biological normalization results at {bio_norm_path}, processing...")
         res_bio_df = pd.read_pickle(bio_norm_path)
         res_bio_comp = res_bio_df.copy()
         if "value_cleaned" in res_bio_comp.columns:
@@ -146,6 +149,7 @@ def process_ner_dir(ner_dirs, base_ner_dir, res_df, conf_path, output_folder):
         nlp = edsnlp.blank("eds")
 
         # Extraction of entities
+        print(f"Get drugs relations for {ner_dir}")
         nlp.add_pipe("eds.sentences")
         nlp.add_pipe(
             "eds.relations",
@@ -231,6 +235,7 @@ def process_ner_dir(ner_dirs, base_ner_dir, res_df, conf_path, output_folder):
                     "AttDate",
                 ],
             )
+        print(f"Saved processed data for {ner_dir} in {output_dir}")
 
 @app.command(name="group_brat")
 def group_brat(
