@@ -31,7 +31,7 @@ def run_classify_diso(
     model: CamembertForSequenceClassification,
     tokenizer: CamembertTokenizer,
     device: torch.device,
-    label_names: str,
+    label_names: List[str],
     output_dir: Path,
     stopwords: List[str],
     qualifiers: List[str],
@@ -40,12 +40,12 @@ def run_classify_diso(
 
   # Load Data
     ents_list = []
+    terms = []
     for brat_dir in brat_dirs:
         docs = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
         docs = edsnlp.data.from_iterable(docs)  # type: ignore
 
         # Filter DISO entities
-        terms = []
         for doc in docs:
             diso_ents = doc.spans.get("DISO") if doc.spans.get("DISO") else []
             for ent in diso_ents:
@@ -63,6 +63,19 @@ def run_classify_diso(
                 terms.append(ent.text)
     results_columns = ["term", "source", "span_converted", "folder_name"] + qualifiers
     results = pd.DataFrame(ents_list, columns=results_columns)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if results.empty:
+        logger.warning("No DISO entities found in provided BRAT directories.")
+        empty_results = pd.DataFrame(
+            columns=results_columns + ["normalized_term", "labels", "scores"]
+        )
+        empty_results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
+        empty_embedding = pd.DataFrame(columns=["normalized_term", "labels", "scores"])
+        empty_embedding.to_pickle(output_dir / "pred_diso_embedding.pkl")
+        return
+
     text_preprocessor = TextPreprocessor(cased=False, stopwords=stopwords)
     predicted_entities = [
         text_preprocessor(
@@ -117,7 +130,6 @@ def run_classify_diso(
     results["labels"] = labels
     results["scores"] = scores
 
-    output_dir.mkdir(parents=True, exist_ok=True)
     results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
 
     all_terms = results[["normalized_term", "labels", "scores"]]
