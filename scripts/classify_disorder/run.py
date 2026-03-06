@@ -136,6 +136,9 @@ def run_classify_diso(
     all_terms = all_terms[~all_terms["normalized_term"].duplicated()]
     predicted_entities = all_terms["normalized_term"].tolist()
 
+    if not embedding_model_path:
+        logger.info("No embedding model path provided, skipping embedding generation.")
+        return
     embedding_normalizer = EmbeddingNormalizer(
         model_name_or_path=embedding_model_path,
         tokenizer_name_or_path=embedding_model_path,
