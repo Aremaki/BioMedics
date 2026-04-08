@@ -82,6 +82,7 @@ Replace the placeholders before running:
 - `<YOUR_API_KEY>` — found in [your UMLS profile](https://uts.nlm.nih.gov/uts/profile) once your account is approved
 - `<year>` and `<version>` — the UMLS release you want (e.g. `2025` and `AB` for the 2025AB release)
 - `<your_path>` the path where you want to save the zip file, it can be :`BioMedics/data/umls`
+NB: The official urls and instruction to automatically download any UMLS terminologies are [here](https://documentation.uts.nlm.nih.gov/automating-downloads.html)
 
 **Prepare and process** UMLS according to the repository notebook:
 ```
