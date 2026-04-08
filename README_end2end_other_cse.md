@@ -70,8 +70,21 @@ snapshot_download(
 ```
 
 ### UMLS data
-- Download the full UMLS release (requires a UMLS account and license): https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html
-- Prepare and process UMLS according to the repository notebook:
+**Download the UMLS Metathesaurus Full Subset** (requires a UMLS account and license — [request access here](https://uts.nlm.nih.gov/uts/signup-login))
+
+The fastest way to download it directly to your CSE is via `curl`:
+
+```bash
+curl "https://uts-ws.nlm.nih.gov/download?url=https://download.nlm.nih.gov/umls/kss/<year><version>/umls-<year><version>-metathesaurus-full.zip&apiKey=<YOUR_API_KEY>" \
+  -o <your_path>/umls-<year><version>.zip
+```
+
+Replace the placeholders before running:
+- `<YOUR_API_KEY>` — found in [your UMLS profile](https://uts.nlm.nih.gov/uts/profile) once your account is approved
+- `<year>` and `<version>` — the UMLS release you want (e.g. `2025` and `AB` for the 2025AB release)
+- `<your_path>` the path where you want to save the zip file, it can be :`BioMedics/data/umls`
+
+**Prepare and process** UMLS according to the repository notebook:
    ```
    data/umls/manage_umls.ipynb
    ```
