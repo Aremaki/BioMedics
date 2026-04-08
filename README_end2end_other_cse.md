@@ -30,7 +30,7 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
 - Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
 
 ```shell
-pip install edstoolbox==0.7.0
+pip install git+https://gitlab.eds.aphp.fr/entrep-t-de-donn-es-de-sant/eds-tools/datasciencetools/eds-toolbox.git
 ```
 
 - Install [Poetry](https://python-poetry.org/) (a tool for dependency management and packaging in Python) with the following command line:
