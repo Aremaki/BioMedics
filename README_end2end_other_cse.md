@@ -60,8 +60,7 @@ Store the chosen model in the appropriate models folder used by the pipeline (e.
 
 ### (ii) Normalization model
 
-- We recommend the SapBERT-all model from Hugging Face: https://huggingface.co/cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR. Download and place it under model/word_embedding/SapBERT_all.
-
+We recommend the SapBERT-all model from Hugging Face: https://huggingface.co/cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR. Download and place it under model/word_embedding/SapBERT_all.
 ```shell
 python -c "from huggingface_hub import snapshot_download; \
 snapshot_download(
@@ -75,7 +74,7 @@ snapshot_download(
 
 **Download the UMLS Metathesaurus Full Subset** (requires a UMLS account and license — [request access here](https://uts.nlm.nih.gov/uts/signup-login))
 The fastest way to download it directly to your CSE is via `curl`:
-```bash
+```shell
 curl "https://uts-ws.nlm.nih.gov/download?url=https://download.nlm.nih.gov/umls/kss/<year><version>/umls-<year><version>-metathesaurus-full.zip&apiKey=<YOUR_API_KEY>" \
   -o <your_path>/umls-<year><version>.zip
 ```
@@ -119,7 +118,7 @@ In your configuration file (`vars` section), set:
 
 Depending on what GPU you have access to, you may need to update the slurm files. Navigate to the slurm scripts:
 
-```
+```shell
 cd scripts/end2end
 ```
 
