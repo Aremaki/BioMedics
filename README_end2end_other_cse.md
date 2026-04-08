@@ -49,7 +49,8 @@ pip install git+https://gitlab.eds.aphp.fr/entrep-t-de-donn-es-de-sant/eds-tools
 
 ## Step 3: Download models and data
 
-### NER + QUALIF model
+### (i) NER + QUALIF model
+
 You have two options:
 - **Train your own**: Train an NER + QUALIF model using your annotated dataset, following the instructions in the repository’s `README.md` under the **“NER + QUALIF”** section.
 
@@ -57,7 +58,8 @@ You have two options:
 
 Store the chosen model in the appropriate models folder used by the pipeline (e.g., `models/ner/` or the path referenced in your config).
 
-### Normalization model
+### (ii) Normalization model
+
 - We recommend the SapBERT-all model from Hugging Face: https://huggingface.co/cambridgeltl/SapBERT-UMLS-2020AB-all-lang-from-XLMR. Download and place it under model/word_embedding/SapBERT_all.
 
 ```shell
@@ -69,26 +71,24 @@ snapshot_download(
 )"
 ```
 
-### UMLS data
+### (iii) UMLS data
+
 **Download the UMLS Metathesaurus Full Subset** (requires a UMLS account and license — [request access here](https://uts.nlm.nih.gov/uts/signup-login))
-
 The fastest way to download it directly to your CSE is via `curl`:
-
 ```bash
 curl "https://uts-ws.nlm.nih.gov/download?url=https://download.nlm.nih.gov/umls/kss/<year><version>/umls-<year><version>-metathesaurus-full.zip&apiKey=<YOUR_API_KEY>" \
   -o <your_path>/umls-<year><version>.zip
 ```
-
 Replace the placeholders before running:
 - `<YOUR_API_KEY>` — found in [your UMLS profile](https://uts.nlm.nih.gov/uts/profile) once your account is approved
 - `<year>` and `<version>` — the UMLS release you want (e.g. `2025` and `AB` for the 2025AB release)
 - `<your_path>` the path where you want to save the zip file, it can be :`BioMedics/data/umls`
 
 **Prepare and process** UMLS according to the repository notebook:
-   ```
-   data/umls/manage_umls.ipynb
-   ```
-   Follow that notebook to extract and store the UMLS resources the pipeline expects.
+```
+data/umls/manage_umls.ipynb
+```
+Follow that notebook to extract and store the UMLS resources the pipeline expects.
 
 ## Step 4: Create a Config File
 
