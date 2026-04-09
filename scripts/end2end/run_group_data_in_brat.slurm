@@ -5,7 +5,7 @@
 #SBATCH --mem=50000
 #SBATCH --output=logs/slurm-%j-stdout.log
 #SBATCH --error=logs/slurm-%j-stderr.log
-#SBATCH --container-image /scratch/images/sparkhadoop.sqsh  --container-mounts=/export/home/$USER:/export/home/$USER,/data/scratch/$USER:/data/scratch/$USER --container-mount-home --container-writable
+#SBATCH --container-image /scratch/images/sparkhadoop.sqsh --container-mount-home --container-writable
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 BIOMEDICS_ROOT="${BIOMEDICS_ROOT:-$(cd "$SCRIPTS_DIR/.." && pwd)}"
