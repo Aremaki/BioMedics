@@ -135,7 +135,7 @@ Depending on what GPU you have access to, you may need to update the slurm files
 cd scripts/end2end
 ```
 
-For each file `*.slurm``, update the SLURM parameters if needed.
+For each slurm file that ends in `*.sh``, update the SLURM parameters if needed.
 
 Example:
 
