@@ -32,7 +32,6 @@ def extract_pandas(brat_dirs, OUT_DF=None, labels=None):
     ENTITY_REGEX = re.compile("^(.\\d+)\t([^ ]+) ([^\t]+)\t(.*)$")
 
     data = []
-    patients = []
     brat_dirs_with_ann_files = [
         (
             brat_dir,
@@ -58,17 +57,9 @@ def extract_pandas(brat_dirs, OUT_DF=None, labels=None):
         )
         for ann_file in ann_files:
             ann_path = join(brat_dir, ann_file)
-            txt_path = ann_path[:-4] + ".txt"
 
             # sanity check
             assert isfile(ann_path)
-            assert isfile(txt_path)
-
-            # Read text file to get patient number :
-            with open(txt_path, "r", encoding="utf-8") as f_txt:
-                lines_txt = f_txt.readlines()
-            patient_num = lines_txt[0][:-1]
-            patients.append(patient_num)
 
             # Read ann file
             with open(ann_path, "r", encoding="utf-8") as f_in:
