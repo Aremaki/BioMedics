@@ -21,8 +21,8 @@ export SCRIPT_DIR SCRIPTS_DIR BIOMEDICS_ROOT VENV_PATH
 
 # Extract settings from config to build dynamic sbatch arguments
 GPU_MODEL=$(grep -E '^gpu_model\s*=' "$config" | awk -F'"' '{print $2}' || echo 'v100')
-USE_SCR=$(grep -E '^use_scratch_storage\s*=' "$config" | grep -io 'true' || echo '')
-USE_HDD=$(grep -E '^use_hdd_storage\s*=' "$config" | grep -io 'true' || echo '')
+USE_SCR=$(grep -E '^use_scratch_storage\s*=' "$config" | awk -F'#' '{print $1}' | grep -io 'true' || echo '')
+USE_HDD=$(grep -E '^use_hdd_storage\s*=' "$config" | awk -F'#' '{print $1}' | grep -io 'true' || echo '')
 
 # Ensure lower/upper cases matching
 GPU_UPPER=$(echo "$GPU_MODEL" | tr '[:lower:]' '[:upper:]')

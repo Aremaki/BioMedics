@@ -2,7 +2,7 @@
 #SBATCH --job-name=group_data_in_brat
 #SBATCH -t 48:00:00
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=50000
+#SBATCH --mem=40000
 #SBATCH --output=logs/slurm-%j-stdout.log
 #SBATCH --error=logs/slurm-%j-stderr.log
 #SBATCH --container-image /scratch/images/sparkhadoop.sqsh --container-mount-home --container-writable

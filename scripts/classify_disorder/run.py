@@ -130,6 +130,7 @@ def run_classify_diso(
 
         results["labels"] = labels
         results["scores"] = scores
+        results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
 
         all_terms = results[["normalized_term", "labels", "scores"]]
         all_terms = all_terms[~all_terms["normalized_term"].duplicated()]
@@ -137,8 +138,7 @@ def run_classify_diso(
 
     else:
         print("No classification model provided, skipping classification step.")
-
-    results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
+        results.to_pickle(output_dir / "pred_with_diso.pkl")
 
     if not embedding_model_path:
         logger.info("No embedding model path provided, skipping embedding generation.")
