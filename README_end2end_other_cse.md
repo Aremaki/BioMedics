@@ -26,12 +26,18 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
    conda deactivate
    source .venv/bin/activate
    ```
+   
 
 - Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
 
 ```shell
 pip install git+https://gitlab.eds.aphp.fr/entrep-t-de-donn-es-de-sant/eds-tools/datasciencetools/eds-toolbox.git
 ```
+
+*Note: At this step, you may want to create a kernel with this virtual environment using the folloiwng command:*
+   ```shell
+   eds-toolbox kernel --spark --hdfs --local
+   ```
 
 - Install [Poetry](https://python-poetry.org/) (a tool for dependency management and packaging in Python) with the following command line:
    ```shell
@@ -89,7 +95,9 @@ Replace the placeholders before running:
 ```
 data/umls/manage_umls.ipynb
 ```
+
 Follow that notebook to extract and store the UMLS resources the pipeline expects.
+*Note: You may use the kernel created with the virtual environment*
 
 ## Step 4: Create a Config File
 
