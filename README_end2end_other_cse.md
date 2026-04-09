@@ -94,20 +94,22 @@ Follow that notebook to extract and store the UMLS resources the pipeline expect
 ## Step 4: Create a Config File
 
 Before running the pipeline, you must create and modify a configuration file.
-Navigate to the config directory:
+
+1. Navigate to the config directory:
 
 ```
-biomedics/configs/end2end/
+BioMedics/configs/end2end/
 ```
 
-Create a new config file from the following template:
+2. Duplicate the template file:
 
 ```
 config_end_to_end_other_cse.cfg
 ```
 
-In your configuration file (`vars` section), set:
+3. Rename the copy using your project's name.
 
+4. Open the new config file and update the following variable in the [vars] section (adjust based on your setup):
 - **input_folder**: Path to the folder containing the CRH `.txt` files (subfolders are allowed).
 - **ner_model_path**: Path to the BioMedics NER model.
 - **normalization_model_path**: Path to the Normalization model (sapbert_all).
