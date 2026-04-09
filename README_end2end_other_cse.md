@@ -97,6 +97,7 @@ data/umls/manage_umls.ipynb
 ```
 
 Follow that notebook to extract and store the UMLS resources the pipeline expects.
+
 *Note: You may use the kernel created with the virtual environment*
 
 ## Step 4: Create a Config File
