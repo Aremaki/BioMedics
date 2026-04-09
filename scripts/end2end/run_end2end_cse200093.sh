@@ -19,6 +19,25 @@ VENV_PATH="${VENV_PATH:-$BIOMEDICS_ROOT/.venv/bin/activate}"
 
 export SCRIPT_DIR SCRIPTS_DIR BIOMEDICS_ROOT VENV_PATH
 
+# Extract settings from config to build dynamic sbatch arguments
+GPU_MODEL=$(grep -E '^gpu_model\s*=' "$config" | awk -F'"' '{print $2}' || echo 'v100')
+USE_SCR=$(grep -E '^use_scratch_storage\s*=' "$config" | grep -io 'true' || echo '')
+USE_HDD=$(grep -E '^use_hdd_storage\s*=' "$config" | grep -io 'true' || echo '')
+
+# Ensure lower/upper cases matching
+GPU_UPPER=$(echo "$GPU_MODEL" | tr '[:lower:]' '[:upper:]')
+GPU_LOWER=$(echo "$GPU_MODEL" | tr '[:upper:]' '[:lower:]')
+
+CMOUNTS="/export/home/$USER:/export/home/$USER"
+if [ -n "$USE_SCR" ]; then CMOUNTS="$CMOUNTS,/data/scratch/$USER:/data/scratch/$USER"; fi
+if [ -n "$USE_HDD" ]; then CMOUNTS="$CMOUNTS,/data/hdd/$USER:/data/hdd/$USER"; fi
+
+PART="gpu${GPU_UPPER}"
+GRES="gpu:${GPU_LOWER}:1"
+
+# Common cluster configuration for dynamic scripts
+SBATCH_ARGS="--partition=$PART --gres=$GRES --container-mounts=$CMOUNTS"
+
 if [ -f "$VENV_PATH" ]; then
     source "$VENV_PATH"
 else
@@ -30,7 +49,7 @@ fi
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_ner.sh" | awk '{print $NF}')
+JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_ner.slurm" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options
@@ -81,7 +100,7 @@ eds-toolbox spark submit --config "$config" --log-path logs/ ../extract_measurem
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_normalization.sh" | awk '{print $NF}')
+JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_normalization.slurm" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options
@@ -123,7 +142,7 @@ echo "Job $JOB_ID finished. Continuing..."
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_classify_diso.sh" | awk '{print $NF}')
+JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_classify_diso.slurm" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options
@@ -161,17 +180,11 @@ wait $TAIL_STDOUT_PID $TAIL_STDERR_PID 2>/dev/null
 echo "Job $JOB_ID finished."
 
 #######################
-## FETCH OUTCOMES
-#######################
-
-# eds-toolbox spark submit --config "$config" --log-path logs/ ../treatments_lab_tests_outcomes/run.py
-
-#######################
 ## GROUP ALL IN BRAT
 #######################
 
 # Submit job and extract job ID
-JOB_ID=$(sbatch --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_group_data_in_brat.sh" | awk '{print $NF}')
+JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_group_data_in_brat.slurm" | awk '{print $NF}')
 echo "Submitted job $JOB_ID."
 
 # Log file names based on SLURM options

@@ -5,21 +5,24 @@ This guide will help you configure and run the end2end pipeline for your specifi
 ## Step 1: Create a Config File
 
 Before running the pipeline, you must create and modify a configuration file.
-Navigate to the config directory:
+
+1. Navigate to the config directory:
 
 ```
 BioMedics/configs/end2end/
 ```
 
-Create a new config file from the following template:
+2. Duplicate the template file:
 
 ```
 config_end_to_end_cse200093_template.cfg
 ```
 
+3. Rename the copy using your project's name.
+
 ## Step 2: Set Input and Output Folders
 
-In your configuration file (`vars` section), set:
+Open the new config file and update the following variable in the [vars] section (adjust based on your setup):
 
 * **Input folder**: Path to the folder containing the CRH `.txt` files (subfolders are allowed).
 * **BRAT output folder**: Path to a folder inside `brat_data` where BRAT files will be saved.

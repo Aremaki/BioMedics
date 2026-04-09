@@ -26,7 +26,7 @@ In order to process large-scale data, the study uses [Spark 2.4](https://spark.a
    conda deactivate
    source .venv/bin/activate
    ```
-   
+
 
 - Install EDS-Toolbox (a python library that provides an efficient way of submitting PySpark scripts on AP-HP's data platform. As it is AP-HP specific, it is not available on PyPI):
 
@@ -113,7 +113,7 @@ BioMedics/configs/end2end/
 2. Duplicate the template file:
 
 ```
-config_end_to_end_other_cse.cfg
+config_end_to_end_other_cse_template.cfg
 ```
 
 3. Rename the copy using your project's name.
@@ -126,36 +126,23 @@ config_end_to_end_other_cse.cfg
 - **lab_test_termino_path**: Only the name of your lab test dictionary downloaded from UMLS (lab_snomed_ct_<year><version>.csv).
 - **brat_config_path**: Path to the BRAT config (configs/brat_data)
 - **brat_output_folder**: Path to a folder inside `brat_data` where BRAT files will be saved.
+- **gpu_model**: Specify your GPU model. Supported values include "v100", "a100", "t4", etc.
+- **use_scratch_storage**: Set to true if your *input_folder* is located inside scratch storage (recommended for faster processing).
+- **use_hdd_storage**: Set to true if your *input_folder* is located inside HDD storage (not recommended for performance).
 
-## Step 5: Update the Slurm files with your own GPU parameters
+> ⚠️ `brat_data` is the only folder accessible by BRAT.
 
-Depending on what GPU you have access to, you may need to update the slurm files. Navigate to the slurm scripts:
-
-```shell
-cd scripts/end2end
-```
-
-For each slurm file that ends in `*.sh``, update the SLURM parameters if needed.
-
-Example:
-
-```bash
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:a100:1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=64G
-#SBATCH --time=08:00:00
-```
-## Step 6: Run the Pipeline
+## Step 5: Run the Pipeline
 
 Once everything is configured, you can launch the pipeline by running:
 
 ```bash
+cd scripts/end2end
 export config="<Your_config_name>.cfg"
 bash run_end2end_other_cse.sh
 ```
 
-## Step 7: Visualize the Results in BRAT
+## Step 6: Visualize the Results in BRAT
 
 When you run the algorithm, it will:
 
