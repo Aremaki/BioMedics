@@ -105,9 +105,10 @@ class FuzzyNormaliser:
         ents_list = []
         for brat_dir in brat_dirs:
             doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
+            docs = edsnlp.data.from_iterable(doc_list)  # type: ignore
             print(f"Get drugs relations for {brat_dir}")
-            doc_list = doc_list.map_pipeline(self.nlp)
-            for doc in doc_list:
+            docs = docs.map_pipeline(self.nlp)
+            for doc in docs:
                 if label_to_normalize in doc.spans.keys():
                     for ent in doc.spans[label_to_normalize]:
                         if hasattr(ent._, "Tech") and ent._.Tech:
