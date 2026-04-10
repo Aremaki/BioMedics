@@ -74,9 +74,8 @@ def run_classify_diso(
                             Span.set_extension(qualifier, default=None)
                         ent_data.append(getattr(ent._, qualifier))
                     all_ents_list.append(ent_data)
-    results_columns = ["term", "source", "span_converted", "folder_name"] + qualifiers
-    results = pd.DataFrame(diso_ents_list, columns=results_columns)
-    all_results = pd.DataFrame(all_ents_list, columns=results_columns)
+    results = pd.DataFrame(diso_ents_list, columns=["term", "source", "span_converted", "folder_name"] + qualifiers)
+    all_results = pd.DataFrame(all_ents_list, columns=["term", "label", "source", "span_converted", "folder_name"] + qualifiers)
 
     # Remove empty qualifier columns
     for qualifier in qualifiers:
@@ -92,7 +91,7 @@ def run_classify_diso(
     if results.empty:
         logger.warning("No DISO entities found in provided BRAT directories.")
         empty_results = pd.DataFrame(
-            columns=results_columns + ["normalized_term", "labels", "scores"]
+            columns=["term", "source", "span_converted", "folder_name"] + qualifiers + ["normalized_term", "labels", "scores"]
         )
         empty_results.to_pickle(output_dir / "pred_with_classified_diso.pkl")
         empty_embedding = pd.DataFrame(columns=["normalized_term", "labels", "scores"])
