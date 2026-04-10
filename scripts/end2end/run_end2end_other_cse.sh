@@ -44,9 +44,9 @@ else
     echo "Warning: venv not found at $VENV_PATH"
 fi
 
-#######################
+###############
 ## NER + Qualif
-#######################
+###############
 
 # Submit job and extract job ID
 JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_ner.slurm" | awk '{print $NF}')
@@ -88,16 +88,16 @@ echo "Job $JOB_ID finished. Continuing..."
 
 
 
-#######################
+######################
 ## Extract Measurement
-#######################
+######################
 
 eds-toolbox spark submit --config "$config" --log-path logs/ ../extract_measurement/run.py
 
 
-#######################
+################
 ## NORMALIZATION
-#######################
+################
 
 # Submit job and extract job ID
 JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_normalization.slurm" | awk '{print $NF}')
@@ -137,9 +137,9 @@ wait $TAIL_STDOUT_PID $TAIL_STDERR_PID 2>/dev/null
 
 echo "Job $JOB_ID finished. Continuing..."
 
-#######################
-## CLASSIFY DISO
-#######################
+#####################################
+## CLASSIFY DISO & FETCH OTHER LABELS
+#####################################
 
 # Submit job and extract job ID
 JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_classify_diso.slurm" | awk '{print $NF}')
@@ -179,9 +179,9 @@ wait $TAIL_STDOUT_PID $TAIL_STDERR_PID 2>/dev/null
 
 echo "Job $JOB_ID finished."
 
-#######################
+####################
 ## GROUP ALL IN BRAT
-#######################
+####################
 
 # Submit job and extract job ID
 JOB_ID=$(sbatch $SBATCH_ARGS --export=ALL,BIOMEDICS_ROOT,SCRIPTS_DIR,VENV_PATH "$SCRIPT_DIR/run_group_data_in_brat.slurm" | awk '{print $NF}')

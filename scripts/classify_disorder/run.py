@@ -39,8 +39,10 @@ def run_classify_diso(
     embedding_model_path: str,
 ):
     # Load Data
-    ents_list = []
-    terms = []
+    diso_ents_list = []
+    const_ents_list = []
+    date_ents_list = []
+    diso_terms = []
     for brat_dir in brat_dirs:
         docs = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
         docs = edsnlp.data.from_iterable(docs)  # type: ignore
@@ -48,6 +50,8 @@ def run_classify_diso(
         # Filter DISO entities
         for doc in docs:
             diso_ents = doc.spans.get("DISO") if doc.spans.get("DISO") else []
+            const_ents = doc.spans.get("Constantes") if doc.spans.get("Constantes") else []
+            date_ents = doc.spans.get("Date") if doc.spans.get("Date") else []
             for ent in diso_ents:
                 ent_data = [
                     ent.text,
@@ -59,12 +63,41 @@ def run_classify_diso(
                     if not Span.has_extension(qualifier):
                         Span.set_extension(qualifier, default=None)
                     ent_data.append(getattr(ent._, qualifier))
-                ents_list.append(ent_data)
-                terms.append(ent.text)
+                diso_ents_list.append(ent_data)
+                diso_terms.append(ent.text)
+            for ent in const_ents:
+                ent_data = [
+                    ent.text,
+                    doc._.note_id + ".ann",
+                    [ent.start_char, ent.end_char],
+                    os.path.basename(os.path.normpath(brat_dir)),
+                ]
+                for qualifier in qualifiers:
+                    if not Span.has_extension(qualifier):
+                        Span.set_extension(qualifier, default=None)
+                    ent_data.append(getattr(ent._, qualifier))
+                const_ents_list.append(ent_data)
+            for ent in date_ents:
+                ent_data = [
+                    ent.text,
+                    doc._.note_id + ".ann",
+                    [ent.start_char, ent.end_char],
+                    os.path.basename(os.path.normpath(brat_dir)),
+                ]
+                for qualifier in qualifiers:
+                    if not Span.has_extension(qualifier):
+                        Span.set_extension(qualifier, default=None)
+                    ent_data.append(getattr(ent._, qualifier))
+                date_ents_list.append(ent_data)
     results_columns = ["term", "source", "span_converted", "folder_name"] + qualifiers
-    results = pd.DataFrame(ents_list, columns=results_columns)
+    results = pd.DataFrame(diso_ents_list, columns=results_columns)
+    cons_results = pd.DataFrame(const_ents_list, columns=results_columns)
+    date_results = pd.DataFrame(date_ents_list, columns=results_columns)
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    cons_results.to_pickle(output_dir / "pred_with_constante.pkl")
+    date_results.to_pickle(output_dir / "pred_with_date.pkl")
 
     if results.empty:
         logger.warning("No DISO entities found in provided BRAT directories.")
@@ -81,7 +114,7 @@ def run_classify_diso(
         text_preprocessor(
             text=ent, remove_stopwords=True, remove_special_characters=True
         )
-        for ent in terms
+        for ent in diso_terms
     ]
     results["normalized_term"] = predicted_entities
 

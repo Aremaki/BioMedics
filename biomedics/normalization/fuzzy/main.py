@@ -16,11 +16,13 @@ class FuzzyNormaliser:
         brat_dirs,
         drug_dict,
         label_to_normalize,
+        labels_to_relate,
         qualifiers,
         method="lev",
         atc_len=7,
     ):
-        self.df = self.gold_generation(brat_dirs, label_to_normalize, qualifiers)
+        self.nlp = self.get_reltaion_nlp(label_to_normalize, labels_to_relate)
+        self.df = self.gold_generation(brat_dirs, label_to_normalize, labels_to_relate, qualifiers)
         self.unashable_cols = []
         for col in self.df.columns:
             if (
@@ -66,16 +68,45 @@ class FuzzyNormaliser:
             self.drug_dict.norm_term = self.drug_dict.norm_term.str.lower().str.strip()
         self.method = method
 
+    def get_reltaion_nlp(self, label_to_normalize, labels_to_relate):
+        # Add Relation
+
+        source = [{"label": label_to_normalize, "attr": None}]
+        target = [{"label": label, "attr": None} for label in labels_to_relate]
+        scheme = {
+            "source": source,
+            "target": target,
+            "type": "Depend",
+            "inv_type": "inv_Depend",
+        }
+        nlp = edsnlp.blank("eds")
+
+        # Extraction of entities
+        nlp.add_pipe("eds.sentences")
+        nlp.add_pipe(
+            "eds.relations",
+            config={
+                "scheme": scheme,
+                "use_sentences": True,
+                "clean_rel": True,
+                "proximity_method": "right",
+                "max_dist": 40,
+            },
+        )
+        return nlp
+
     def get_gold(self):
         return self.df
 
     def get_dict(self):
         return self.drug_dict
 
-    def gold_generation(self, brat_dirs, label_to_normalize, qualifiers):
+    def gold_generation(self, brat_dirs, label_to_normalize, labels_to_relate, qualifiers):
         ents_list = []
         for brat_dir in brat_dirs:
             doc_list = BratConnector(brat_dir).brat2docs(edsnlp.blank("eds"))  # type: ignore
+            print(f"Get drugs relations for {brat_dir}")
+            doc_list = doc_list.map_pipeline(self.nlp)
             for doc in doc_list:
                 if label_to_normalize in doc.spans.keys():
                     for ent in doc.spans[label_to_normalize]:
@@ -92,8 +123,14 @@ class FuzzyNormaliser:
                             if not Span.has_extension(qualifier):
                                 Span.set_extension(qualifier, default=None)
                             ent_data.append(getattr(ent._, qualifier))
+                        for label in labels_to_relate:
+                            related_ents = []
+                            for rel in ent._.rel:
+                                if rel["target"].label_ == label:
+                                    related_ents.append(rel["target"].text)
+                            ent_data.append(related_ents)
                         ents_list.append(ent_data)
-        df_columns = ["term", "source", "span_converted", "term_to_norm", "folder_name"] + qualifiers
+        df_columns = ["term", "source", "span_converted", "term_to_norm", "folder_name"] + qualifiers + labels_to_relate
         df = pd.DataFrame(ents_list, columns=df_columns)
         return df
 

@@ -141,6 +141,7 @@ def process_ner_dir(ner_dirs, base_ner_dir, res_df, conf_path, output_folder):
                 {"label": "strength", "attr": None},
                 {"label": "form", "attr": None},
                 {"label": "Frequency", "attr": None},
+                {"label": "Duration", "attr": None},
             ],
             "type": "Depend",
             "inv_type": "inv_Depend",
